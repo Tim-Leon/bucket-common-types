@@ -1,0 +1,12 @@
+/home/kenzo/repos/MystVoyager/bucket-common-types/target/debug/deps/libanes-c3396a098ffe629d.rmeta: /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/lib.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/macros.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/attribute.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/buffer.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/color.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/cursor.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/terminal.rs
+
+/home/kenzo/repos/MystVoyager/bucket-common-types/target/debug/deps/anes-c3396a098ffe629d.d: /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/lib.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/macros.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/attribute.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/buffer.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/color.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/cursor.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/terminal.rs
+
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/lib.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/macros.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/attribute.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/buffer.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/color.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/cursor.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anes-0.1.6/src/sequences/terminal.rs:

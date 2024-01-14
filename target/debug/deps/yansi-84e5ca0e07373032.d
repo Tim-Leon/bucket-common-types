@@ -1,0 +1,12 @@
+/home/kenzo/repos/MystVoyager/bucket-common-types/target/debug/deps/libyansi-84e5ca0e07373032.rmeta: /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/lib.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/macros.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/windows.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/paint.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/style.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/color.rs
+
+/home/kenzo/repos/MystVoyager/bucket-common-types/target/debug/deps/libyansi-84e5ca0e07373032.rlib: /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/lib.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/macros.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/windows.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/paint.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/style.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/color.rs
+
+/home/kenzo/repos/MystVoyager/bucket-common-types/target/debug/deps/yansi-84e5ca0e07373032.d: /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/lib.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/macros.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/windows.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/paint.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/style.rs /home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/color.rs
+
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/lib.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/macros.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/windows.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/paint.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/style.rs:
+/home/kenzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/yansi-0.5.1/src/color.rs:

@@ -1,0 +1,16 @@
+
+[tasks.format]
+command="cargo"
+args=["fmt"]
+
+
+
+[tasks.build]
+command="cargo"
+args=["build"]
+dependencies=["format"]
+
+[tasks.fuzz]
+command="cargo"
+args=["fuzz", "init"]
+install_crate = "cargo-fuzz"
