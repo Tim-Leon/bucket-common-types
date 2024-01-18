@@ -1,4 +1,8 @@
-use std::{fmt::Display, num::ParseIntError, str::FromStr};
+use std::{
+    fmt::{self, Display},
+    num::ParseIntError,
+    str::FromStr,
+};
 
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
@@ -139,6 +143,12 @@ pub type ClusterId = u32;
 pub struct RegionCluster {
     region: BucketRegion,
     cluster_id: ClusterId,
+}
+
+impl Display for RegionCluster {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.region, self.cluster_id)
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -517,7 +527,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn bucket_region_parsing() {
+        fn test_bucket_region_parsing() {
             print!("{}", BucketRegion::from_str("eu-central-1").unwrap());
             assert_eq!(
                 BucketRegion::from_str("eu-central-1").unwrap().to_string(),
@@ -526,7 +536,7 @@ mod tests {
         }
 
         #[test]
-        fn region_cluster_valid_parsing() {
+        fn test_region_cluster_valid_parsing() {
             assert_eq!(
                 RegionCluster::from_str("eu-central-1:1").unwrap(),
                 RegionCluster {
@@ -536,6 +546,15 @@ mod tests {
             );
 
             // Add more valid cases...
+        }
+
+        #[test]
+        fn test_region_cluster_formatting() {
+            let region_cluster = RegionCluster {
+                region: BucketRegion::EuropeCentral(1),
+                cluster_id: 1,
+            };
+            assert_eq!(region_cluster.to_string(), "eu-central-1:1");
         }
     }
 }
