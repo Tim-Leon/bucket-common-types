@@ -1,5 +1,5 @@
 use std::{
-    fmt::{self, Display},
+    fmt::{self, write, Display},
     num::ParseIntError,
     str::FromStr,
 };
@@ -17,8 +17,8 @@ pub mod unix_timestamp;
 pub mod util;
 
 // Inspired https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
-//strum::EnumString
-#[derive(Debug, Clone, Eq, PartialEq, strum::Display, Serialize, Deserialize, EnumIter)]
+//strum::EnumString strum::Display
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter)]
 pub enum BucketRegion {
     #[strum(serialize = "eu-central")]
     EuropeCentral(u32),
@@ -85,6 +85,43 @@ pub enum BucketRegion {
     SouthAmericaWest(u32),
     #[strum(serialize = "sa-east")]
     SouthAmericaEast(u32),
+}
+//eu-central-1
+impl Display for BucketRegion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BucketRegion::EuropeCentral(x) => write!(f, "eu-central-{}", x),
+            BucketRegion::EuropeNorth(x) => write!(f, "eu-north-{}", x),
+            BucketRegion::EuropeSouth(x) => write!(f, "eu-south-{}", x),
+            BucketRegion::EuropeWest(x) => write!(f, "eu-west-{}", x),
+            BucketRegion::EuropeEast(x) => write!(f, "eu-east-{}", x),
+            BucketRegion::AmericaCentral(x) => write!(f, "us-central-{}", x),
+            BucketRegion::AmericaNorth(x) => write!(f, "us-north-{}", x),
+            BucketRegion::AmericaSouth(x) => write!(f, "us-south-{}", x),
+            BucketRegion::AmericaWest(x) => write!(f, "us-west-{}", x),
+            BucketRegion::AmericaEast(x) => write!(f, "us-east-{}", x),
+            BucketRegion::AfricaCentral(x) => write!(f, "af-central-{}", x),
+            BucketRegion::AfricaNorth(x) => write!(f, "af-north-{}", x),
+            BucketRegion::AfricaSouth(x) => write!(f, "af-south-{}", x),
+            BucketRegion::AfricaWest(x) => write!(f, "af-west-{}", x),
+            BucketRegion::AfricaEast(x) => write!(f, "af-east-{}", x),
+            BucketRegion::AsiaPacificCentral(x) => write!(f, "ap-central-{}", x),
+            BucketRegion::AsiaPacificNorth(x) => write!(f, "ap-north-{}", x),
+            BucketRegion::AsiaPacificSouth(x) => write!(f, "ap-south-{}", x),
+            BucketRegion::AsiaPacificWest(x) => write!(f, "ap-west-{}", x),
+            BucketRegion::AsiaPacificEast(x) => write!(f, "ap-east-{}", x),
+            BucketRegion::MiddleEastCentral(x) => write!(f, "me-central-{}", x),
+            BucketRegion::MiddleEastNorth(x) => write!(f, "me-north-{}", x),
+            BucketRegion::MiddleEastSouth(x) => write!(f, "me-south-{}", x),
+            BucketRegion::MiddleEastWest(x) => write!(f, "me-west-{}", x),
+            BucketRegion::MiddleEastEast(x) => write!(f, "me-east-{}", x),
+            BucketRegion::SouthAmericaCentral(x) => write!(f, "sa-central-{}", x),
+            BucketRegion::SouthAmericaNorth(x) => write!(f, "sa-north-{}", x),
+            BucketRegion::SouthAmericaSouth(x) => write!(f, "sa-south-{}", x),
+            BucketRegion::SouthAmericaWest(x) => write!(f, "sa-west-{}", x),
+            BucketRegion::SouthAmericaEast(x) => write!(f, "sa-east-{}", x),
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -531,7 +568,7 @@ mod tests {
             print!("{}", BucketRegion::from_str("eu-central-1").unwrap());
             assert_eq!(
                 BucketRegion::from_str("eu-central-1").unwrap().to_string(),
-                BucketRegion::EuropeCentral(0).to_string()
+                BucketRegion::EuropeCentral(1).to_string()
             );
         }
 
