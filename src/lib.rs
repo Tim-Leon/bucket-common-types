@@ -7,10 +7,14 @@ use std::{
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-#[cfg(feature = "bucket_search_query")]
+#[cfg(feature = "search_query")]
 pub mod bucket_search_query;
+#[cfg(feature = "secret_share_link")]
+#[cfg(feature = "share_link")]
 pub mod exclusive_share_link;
+#[cfg(feature = "secret_share_link")]
 pub mod secret_share_link;
+#[cfg(feature = "share_link")]
 pub mod share_link;
 #[cfg(feature = "unix_timestamp")]
 pub mod unix_timestamp;
