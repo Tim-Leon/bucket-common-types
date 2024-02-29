@@ -70,7 +70,7 @@ impl fmt::Display for SearchFlags {
     }
 }
 
-struct BucketSearchQuery {
+pub struct BucketSearchQuery {
     query: String,
     flags: Vec<SearchFlags>,
 }
