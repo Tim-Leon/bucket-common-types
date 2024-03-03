@@ -71,8 +71,8 @@ impl fmt::Display for SearchFlags {
 }
 
 pub struct BucketSearchQuery {
-    query: String,
-    flags: Vec<SearchFlags>,
+    pub query: String,
+    pub flags: Vec<SearchFlags>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -87,6 +87,7 @@ pub enum BucketSearchInputQueryParsingError {
     TooManyDescriptionFlags,
 }
 
+
 impl FromStr for BucketSearchQuery {
     type Err = BucketSearchInputQueryParsingError;
     // Note this function is for user input.
@@ -94,7 +95,6 @@ impl FromStr for BucketSearchQuery {
         let mut query = s.to_string();
         let fragments: Vec<&str> = s.split(';').collect();
 
-        //if fragments.collect::<Vec<&str>>().len() <= 0 { // No special search params
         if fragments.len() == 0 {
             return Ok(BucketSearchQuery {
                 query: s.to_string(),
@@ -105,8 +105,6 @@ impl FromStr for BucketSearchQuery {
         let mut flags: Vec<SearchFlags> = vec![];
         let mut counts: HashMap<SearchFlags, i32> = HashMap::new();
         for fragment in fragments {
-            // if let Some((_, frag)) = fragment.split_once(':')
-            // {
             match SearchFlags::try_from(fragment) {
                 Ok(x) => {
                     *counts.entry(x.clone()).or_insert(0) += 1;
@@ -128,23 +126,9 @@ impl FromStr for BucketSearchQuery {
                 }
                 Err(_) => continue,
             }
-            //}
         }
         flags.sort();
-        // if flags.iter().filter(|p| p == SearchBarFlags::BucketId).sum() > 1 {
-        //     Err(SearchBarParsingError::TooManyBucketIdFlags)
-        // }
-        // if flags.iter().filter(|p| p == SearchBarFlags::UserId).sum() > 1 {
-        //     Err(SearchBarParsingError::TooManyUserIdFlags)
-        // }
-        // if flags
-        //     .iter()
-        //     .filter(|p| p == SearchBarFlags::Description)
-        //     .sum()
-        //     > 1
-        // {
-        //     Err(SearchBarParsingError::TooManyDescriptionFlags)
-        // }
+ 
 
         Ok(BucketSearchQuery { query, flags })
     }
@@ -163,6 +147,7 @@ impl TryFrom<url::Url> for BucketSearchQuery {
 }
 
 impl BucketSearchQuery {
+
     // Convert struct into a search URL
     // Should be in the format of "bucketdrive.co/search/:user_id/:bucket_id/#desc=:desc#tag={:tag..}"
     pub fn to_search_url(&self) -> Url {
