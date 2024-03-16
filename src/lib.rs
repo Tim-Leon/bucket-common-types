@@ -22,7 +22,7 @@ pub mod util;
 
 // Inspired https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
 //strum::EnumString strum::Display
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter, Copy)]
 pub enum BucketRegion {
     #[strum(serialize = "eu-central")]
     EuropeCentral(u32),
