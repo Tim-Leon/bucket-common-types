@@ -341,7 +341,7 @@ pub enum PaymentModel {
 * Zero-Knowledge: uses client side encryption.
 * Custom: uses custom encryption. Relies on the client implementing the encryption specifics.
 */
-#[derive(Debug, Clone, Eq, PartialEq, strum::Display, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum BucketEncryption {
     None,
     AES256(u8),
@@ -391,6 +391,17 @@ impl FromStr for BucketEncryption {
                 Ok(BucketEncryption::Custom(s.to_string()))
             }
             _ => Err(BucketEncryptionParsingError::InvalidFormat),
+        }
+    }
+}
+
+impl Display for BucketEncryption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BucketEncryption::None => write!(f, "None"),
+            BucketEncryption::AES256(version) => write!(f, "AES256:{}", version),
+            BucketEncryption::ZeroKnowledge(version) => write!(f, "ZeroKnowledge:{}", version),
+            BucketEncryption::Custom(name) => write!(f, "Custom-{}", name),
         }
     }
 }
@@ -499,19 +510,46 @@ impl BucketGuid {
 }
 
 #[cfg(test)]
-mod tests {
+mod bucket_encryption_tests {
     use super::*;
-
     #[test]
-    fn test_bucket_guid_display() {
-        let bucket = BucketGuid {
-            user_id: uuid::Uuid::new_v4(),
-            bucket_id: uuid::Uuid::new_v4(),
-        };
-        let result = format!("{}", bucket); // Use Display directly
-        assert!(result.len() <= 63, "Bucket name is too long for S3-API");
-    }
+    fn test_validate_bucket_encryption() {
+        // Test valid inputs
+        assert_eq!(
+            BucketEncryption::from_str("None"),
+            Ok(BucketEncryption::None)
+        );
 
+        assert_eq!(
+            BucketEncryption::from_str("AES256:1"),
+            Ok(BucketEncryption::AES256(1))
+        );
+        
+
+
+        assert_eq!(
+            BucketEncryption::from_str("ZeroKnowledge:2"),
+            Ok(BucketEncryption::ZeroKnowledge(2))
+        );
+
+        assert_eq!(
+            BucketEncryption::from_str("Custom-MyEncryption"),
+            Ok(BucketEncryption::Custom("Custom-MyEncryption".to_string()))
+        );
+
+        // Test invalid formats
+        assert_eq!(
+            BucketEncryption::from_str("InvalidEncryption"),
+            Err(BucketEncryptionParsingError::InvalidFormat)
+        );
+
+        assert_eq!(
+            BucketEncryption::from_str("AES256"), // Missing version
+            Err(BucketEncryptionParsingError::InvalidDelimiter)
+        );
+
+
+    }
     #[test]
     fn test_valid_bucket_encryption_parsing() {
         assert_eq!(
@@ -562,6 +600,21 @@ mod tests {
         assert!(too_long_custom_encryption
             .parse::<BucketEncryption>()
             .is_err());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bucket_guid_display() {
+        let bucket = BucketGuid {
+            user_id: uuid::Uuid::new_v4(),
+            bucket_id: uuid::Uuid::new_v4(),
+        };
+        let result = format!("{}", bucket); // Use Display directly
+        assert!(result.len() <= 63, "Bucket name is too long for S3-API");
     }
 
     mod bucket_region {
