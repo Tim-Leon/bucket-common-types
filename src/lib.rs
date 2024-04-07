@@ -1,11 +1,12 @@
 use std::{
-    fmt::{self, write, Display},
+    fmt::{self, Display},
     num::ParseIntError,
     str::FromStr,
 };
 
 use serde::{Deserialize, Serialize};
-use strum::EnumIter;
+use strum::{Display, EnumIter, EnumString};
+use util::DOMAIN_URL;
 
 #[cfg(feature = "search_query")]
 pub mod bucket_search_query;
@@ -20,6 +21,14 @@ pub mod share_link;
 pub mod unix_timestamp;
 pub mod util;
 
+pub enum WebhookSignatureScheme {
+    ED25519,
+    HMAC_SHA256,
+}
+
+pub enum ContentEncoding {
+    LZ4
+}
 // Inspired https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
 //strum::EnumString strum::Display
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter, Copy)]
@@ -180,6 +189,8 @@ impl FromStr for BucketRegion {
 
 pub type ClusterId = u32;
 
+
+/// Contains region and cluster information. Also used with DNS to get the actual cluster ip address.
 #[derive(PartialEq, Debug)]
 pub struct RegionCluster {
     region: BucketRegion,
@@ -188,7 +199,12 @@ pub struct RegionCluster {
 
 impl Display for RegionCluster {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.region, self.cluster_id)
+        write!(f, "{}-{}", self.region, self.cluster_id)
+    }
+}
+impl RegionCluster {
+    pub fn to_url(&self) -> url::Url {
+        url::Url::from_str(format!("{}.{}",self.to_string(), DOMAIN_URL).as_str()).unwrap()
     }
 }
 
@@ -333,8 +349,81 @@ pub enum PaymentModel {
     OneTime,
 }
 
+#[derive(EnumString, PartialEq, Debug, Serialize, strum::Display )]
+pub enum Role {
+    #[strum(serialize = "S")]
+    Server,
+    #[strum(serialize = "C")]
+    Client,
+}
+
+pub struct TestEncryption {
+    // Who is responsible for the encryption?
+    pub responsible: Role,
+    // The encryption to be used. 
+    pub encryption: String,
+    // either AEAD or Hash-based-signature, can use both to verify integrity.
+    pub signature: Option<String>,
+    // Version of the encryption implementation
+    pub version: u32,
+}
+
+impl Display for TestEncryption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let signature_str = match &self.signature {
+            Some(sig) => sig,
+            None => "",
+        };
+        write!(
+            f,
+            "{}:{}:{}:{}",
+            &self.responsible,
+            &self.encryption,
+            signature_str,
+            &self.version
+        )
+    }
+}
+#[derive(thiserror::Error, Debug, Display)]
+pub enum TestEncryptionParsingError {
+    InvalidFormat,
+    InvalidRole,
+    InvalidVersion,
+}
+impl FromStr for TestEncryption
+{
+    type Err = TestEncryptionParsingError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split(':').collect();
+        if parts.len() != 4 {
+            return Err(TestEncryptionParsingError::InvalidFormat);
+        }
+
+        let role =Role::from_str(parts[0]).map_err(|x| TestEncryptionParsingError::InvalidRole)?;
+
+        let encryption = parts[1].to_string();
+        let signature = if parts[2].is_empty() {
+            None
+        } else {
+            Some(parts[2].to_string())
+        };
+
+        let version = match parts[3].parse::<u32>() {
+            Ok(v) => v,
+            Err(_) => return Err(TestEncryptionParsingError::InvalidVersion),
+        };
+
+        Ok(TestEncryption {
+            responsible: role,
+            encryption,
+            signature,
+            version,
+        })
+    }
+}
 /*
-* The encryption has version contorll built in
+* The encryption has version control built in
 * The format is Encryption:Version,
 * None: uses no encryption.
 * AES256: uses server side encryption.
@@ -509,6 +598,8 @@ impl BucketGuid {
     }
 }
 
+
+
 #[cfg(test)]
 mod bucket_encryption_tests {
     use super::*;
@@ -627,6 +718,196 @@ mod tests {
                 BucketRegion::from_str("eu-central-1").unwrap().to_string(),
                 BucketRegion::EuropeCentral(1).to_string()
             );
+        }
+
+        #[test]
+        fn test_all_region_cluster_to_url() {
+            let b = BucketRegion::AfricaCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::EuropeCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::EuropeNorth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::EuropeSouth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::EuropeWest(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::EuropeEast(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AmericaCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AmericaNorth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AmericaSouth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AmericaWest(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AmericaEast(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AfricaCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AfricaNorth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AfricaSouth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AfricaWest(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AfricaEast(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AsiaPacificCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AsiaPacificNorth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AsiaPacificSouth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AsiaPacificWest(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::AsiaPacificEast(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::MiddleEastCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::MiddleEastNorth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::MiddleEastSouth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::MiddleEastWest(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::MiddleEastEast(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::SouthAmericaCentral(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::SouthAmericaNorth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::SouthAmericaSouth(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::SouthAmericaWest(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
+            let b = BucketRegion::SouthAmericaEast(0);
+            let brc = RegionCluster {
+                region: b,
+                cluster_id: 1,
+            };
+            brc.to_url();
         }
 
         #[test]

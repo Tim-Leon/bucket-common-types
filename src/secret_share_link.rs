@@ -1,6 +1,7 @@
 #![cfg(feature = "secret_share_link")]
 
-use aes_gcm::{self, Aes256Gcm};
+use aes_gcm::{Aes256Gcm};
+use aes_gcm;
 use base64::{engine::general_purpose, Engine};
 use digest::generic_array::GenericArray;
 use digest::OutputSizeUser;
@@ -10,6 +11,7 @@ use std::fmt::{Display, Formatter};
 use time::OffsetDateTime;
 
 use crate::util::SECRET_SHARE_PATH_URL;
+use crate::RegionCluster;
 use crate::{share_link::BucketSharePermissionFlags, util::DOMAIN_URL};
 
 // Only difference between ShareLink and SecretShareLink is that SecretShareLink has a bucket key Aes256Gcm.
@@ -184,6 +186,7 @@ impl SecretShareLink {
     }
 
     pub fn new(
+        region_cluster: RegionCluster,
         user_id: uuid::Uuid,
         bucket_id: uuid::Uuid,
         bucket_key: aes_gcm::Key<Aes256Gcm>,
