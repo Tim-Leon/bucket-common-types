@@ -16,7 +16,7 @@ bucket_search_query=[]
 unix_timestamp = []
 [dependencies]
 aes-gcm = "0.10.2"
-base64 = "0.21.3"
+base64 = "0.22.0"
 bincode = "1.3.3"
 bitflags = {version = "2.4.0", features = ["serde"]}
 digest = "0.10.7"
