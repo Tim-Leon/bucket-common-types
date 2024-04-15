@@ -35,6 +35,13 @@ impl TryFrom<String> for WebhookSignatureScheme {
     }
 }
 
+impl From<String> for WebhookSignatureScheme {
+    fn from(value: String) -> Self {
+        Self::try_from(value.as_str()).expect("WebhookSignatureScheme failed to parse string into enum")
+    }
+}
+
+
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum ContentEncoding {
     LZ4
