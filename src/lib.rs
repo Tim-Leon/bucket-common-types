@@ -27,13 +27,13 @@ pub enum WebhookSignatureScheme {
     HMAC_SHA256,
 }
 // Implemented specifically for the backend, can just ignore this implementation for the most part..
-//impl TryFrom<String> for WebhookSignatureScheme {
-//    type Error = ();
-//
-//    fn try_from(value: String) -> Result<Self, Self::Error> {
-//        Self::try_from(value.as_str())
-//    }
-//}
+impl TryFrom<String> for WebhookSignatureScheme {
+    type Error = strum::ParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Ok(Self::try_from(value.as_str())?)
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum ContentEncoding {
