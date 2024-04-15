@@ -21,7 +21,7 @@ pub mod share_link;
 pub mod unix_timestamp;
 pub mod util;
 
-#[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
+#[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString, Default)]
 pub enum WebhookSignatureScheme {
     ED25519,
     HMAC_SHA256,
