@@ -29,11 +29,11 @@ pub enum WebhookSignatureScheme {
 }
 
 
-
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum ContentEncoding {
     LZ4
 }
+
 // Inspired https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
 //strum::EnumString strum::Display
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter, Copy)]
@@ -104,6 +104,7 @@ pub enum BucketRegion {
     #[strum(serialize = "sa-east")]
     SouthAmericaEast(u32),
 }
+
 //eu-central-1
 impl Display for BucketRegion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -210,9 +211,10 @@ impl Display for RegionCluster {
         write!(f, "{}-{}", self.region, self.cluster_id)
     }
 }
+
 impl RegionCluster {
     pub fn to_url(&self) -> url::Url {
-        url::Url::from_str(format!("{}.{}",self.to_string(), DOMAIN_URL).as_str()).unwrap()
+        url::Url::from_str(format!("{}.{}", self.to_string(), DOMAIN_URL).as_str()).unwrap()
     }
 }
 
@@ -255,7 +257,7 @@ impl FromStr for RegionCluster {
 }
 
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum BucketCompression {
     ServerGzip,
@@ -273,7 +275,7 @@ pub enum BucketCompression {
 Video Codec Support Matrix TODO: Add...
 */
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum VideoCodec {
     AV1,
@@ -297,7 +299,7 @@ enum BucketAvailabilityStatus {
 }
 
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum AvailabilityStatus {
     //TODO: REMOVE?
@@ -317,7 +319,7 @@ pub enum AvailabilityStatus {
 * Reduced Redundancy: Will use HDD but with less redundancy and more risk for the end user.
 */
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum BucketStorageClass {
     General,
@@ -349,7 +351,7 @@ metered subscription provide unlimited usage. But
 
 */
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::Display, strum::EnumString, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::Display, strum::EnumString, Serialize, Deserialize,
 )]
 pub enum PaymentModel {
     Metered,
@@ -357,7 +359,7 @@ pub enum PaymentModel {
     OneTime,
 }
 
-#[derive(EnumString, PartialEq, Debug, Serialize, strum::Display )]
+#[derive(EnumString, PartialEq, Debug, Serialize, strum::Display, Clone, Eq, Deserialize)]
 pub enum Role {
     #[strum(serialize = "S")]
     Server,
@@ -382,8 +384,9 @@ pub enum Encryption {
     Custom(String),
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BucketEncryption {
-    // Who is responsible for the encryption?
+    /// Who is responsible for the encryption?
     pub responsible: Role,
     // The encryption to be used. 
     pub encryption: String,
@@ -409,12 +412,14 @@ impl Display for BucketEncryption {
         )
     }
 }
+
 #[derive(thiserror::Error, Debug, Display)]
 pub enum TestEncryptionParsingError {
     InvalidFormat,
     InvalidRole,
     InvalidVersion,
 }
+
 impl FromStr for BucketEncryption
 {
     type Err = TestEncryptionParsingError;
@@ -425,7 +430,7 @@ impl FromStr for BucketEncryption
             return Err(TestEncryptionParsingError::InvalidFormat);
         }
 
-        let role =Role::from_str(parts[0]).map_err(|x| TestEncryptionParsingError::InvalidRole)?;
+        let role = Role::from_str(parts[0]).map_err(|x| TestEncryptionParsingError::InvalidRole)?;
 
         let encryption = parts[1].to_string();
         let signature = if parts[2].is_empty() {
@@ -506,7 +511,7 @@ impl Display for Encryption {
 }
 
 #[derive(
-    Debug, Clone, Copy, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Copy, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum BucketVisibility {
     /// Anyone can see the bucket
@@ -529,7 +534,7 @@ bitflags::bitflags! {
 }
 
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum DownloadFormat {
     Raw,
@@ -541,7 +546,7 @@ pub enum DownloadFormat {
 * Metered Subscription is the intended usage with monthly subscription being the main alternative in the form of. But to make it easier for regular users to use the service it also offers basic and premium plans.
 */
 #[derive(
-    Debug, Clone, Copy, Eq, PartialEq, strum::Display, strum::EnumString, Serialize, Deserialize,
+Debug, Clone, Copy, Eq, PartialEq, strum::Display, strum::EnumString, Serialize, Deserialize,
 )]
 pub enum PaymentPlan {
     Free,
@@ -557,7 +562,7 @@ pub enum PaymentPlan {
 * https://stripe.com/en-se/guides/payment-methods-guide
 */
 #[derive(
-    Debug, Clone, Eq, PartialEq, strum::Display, strum::EnumString, Serialize, Deserialize,
+Debug, Clone, Eq, PartialEq, strum::Display, strum::EnumString, Serialize, Deserialize,
 )]
 pub enum PaymentMethod {
     Card,
@@ -609,10 +614,10 @@ impl BucketGuid {
 }
 
 
-
 #[cfg(test)]
 mod bucket_encryption_tests {
     use super::*;
+
     #[test]
     fn test_validate_bucket_encryption() {
         // Test valid inputs
@@ -625,7 +630,6 @@ mod bucket_encryption_tests {
             Encryption::from_str("AES256:1"),
             Ok(Encryption::AES256(1))
         );
-        
 
 
         assert_eq!(
@@ -648,9 +652,8 @@ mod bucket_encryption_tests {
             Encryption::from_str("AES256"), // Missing version
             Err(BucketEncryptionParsingError::InvalidDelimiter)
         );
-
-
     }
+
     #[test]
     fn test_valid_bucket_encryption_parsing() {
         assert_eq!(
