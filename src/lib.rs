@@ -414,7 +414,7 @@ impl Display for BucketEncryption {
 }
 
 #[derive(thiserror::Error, Debug, Display)]
-pub enum TestEncryptionParsingError {
+pub enum BucketEncryptionParsingError {
     InvalidFormat,
     InvalidRole,
     InvalidVersion,
@@ -422,15 +422,15 @@ pub enum TestEncryptionParsingError {
 
 impl FromStr for BucketEncryption
 {
-    type Err = TestEncryptionParsingError;
+    type Err = BucketEncryptionParsingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.split(':').collect();
         if parts.len() != 4 {
-            return Err(TestEncryptionParsingError::InvalidFormat);
+            return Err(BucketEncryptionParsingError::InvalidFormat);
         }
 
-        let role = Role::from_str(parts[0]).map_err(|x| TestEncryptionParsingError::InvalidRole)?;
+        let role = Role::from_str(parts[0]).map_err(|x| BucketEncryptionParsingError::InvalidRole)?;
 
         let encryption = parts[1].to_string();
         let signature = if parts[2].is_empty() {
@@ -441,7 +441,7 @@ impl FromStr for BucketEncryption
 
         let version = match parts[3].parse::<u32>() {
             Ok(v) => v,
-            Err(_) => return Err(TestEncryptionParsingError::InvalidVersion),
+            Err(_) => return Err(BucketEncryptionParsingError::InvalidVersion),
         };
 
         Ok(BucketEncryption {
@@ -455,7 +455,7 @@ impl FromStr for BucketEncryption
 
 
 #[derive(Debug, Clone, Eq, PartialEq, thiserror::Error)]
-pub enum BucketEncryptionParsingError {
+pub enum EncryptionParsingError {
     #[error("invalid format")]
     InvalidFormat,
     #[error("custom format too long")]
@@ -467,20 +467,20 @@ pub enum BucketEncryptionParsingError {
 }
 
 impl FromStr for Encryption {
-    type Err = BucketEncryptionParsingError;
+    type Err = EncryptionParsingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split(':');
         let encryption = parts
             .next()
-            .ok_or(BucketEncryptionParsingError::InvalidDelimiter)?;
+            .ok_or(EncryptionParsingError::InvalidDelimiter)?;
         match encryption {
             "None" => Ok(Encryption::None),
             "AES256" | "ZeroKnowledge" => {
                 let version = u8::from_str(
                     parts
                         .next()
-                        .ok_or(BucketEncryptionParsingError::InvalidDelimiter)?,
+                        .ok_or(EncryptionParsingError::InvalidDelimiter)?,
                 )?;
                 match encryption {
                     "AES256" => Ok(Encryption::AES256(version)),
@@ -490,11 +490,11 @@ impl FromStr for Encryption {
             }
             x if x.starts_with("Custom-") => {
                 if x.len() > 71 {
-                    return Err(BucketEncryptionParsingError::CustomFormatTooLong);
+                    return Err(EncryptionParsingError::CustomFormatTooLong);
                 }
                 Ok(Encryption::Custom(s.to_string()))
             }
-            _ => Err(BucketEncryptionParsingError::InvalidFormat),
+            _ => Err(EncryptionParsingError::InvalidFormat),
         }
     }
 }
@@ -645,12 +645,12 @@ mod bucket_encryption_tests {
         // Test invalid formats
         assert_eq!(
             Encryption::from_str("InvalidEncryption"),
-            Err(BucketEncryptionParsingError::InvalidFormat)
+            Err(EncryptionParsingError::InvalidFormat)
         );
 
         assert_eq!(
             Encryption::from_str("AES256"), // Missing version
-            Err(BucketEncryptionParsingError::InvalidDelimiter)
+            Err(EncryptionParsingError::InvalidDelimiter)
         );
     }
 
