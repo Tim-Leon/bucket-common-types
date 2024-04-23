@@ -20,11 +20,12 @@ pub mod share_link;
 #[cfg(feature = "unix_timestamp")]
 pub mod unix_timestamp;
 pub mod util;
+pub mod bucket_path;
 
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum WebhookSignatureScheme {
     ED25519,
-    HMAC_SHA256,
+    HmacSha256,
 }
 
 
@@ -194,11 +195,14 @@ impl FromStr for BucketRegion {
 pub type ClusterId = u32;
 
 
-/// Contains region and cluster information. Also used with DNS to get the actual cluster ip address.
-#[derive(PartialEq, Debug)]
+/// Contains region and cluster information.
+/// Used in the subdomain to be used by DNS to resolve the ip address of that specific cluster.
+/// BucketRegion field denoting the region.
+/// And ClusterId referring to a specific cluster in the region.
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct RegionCluster {
-    region: BucketRegion,
-    cluster_id: ClusterId,
+    pub region: BucketRegion,
+    pub cluster_id: ClusterId,
 }
 
 impl Display for RegionCluster {
@@ -338,8 +342,8 @@ Pricing
 - Subscription.
 - One Time Payment.
 
-When ever a user uses subscription or onetime-payment then user balance is used.
-When a user runs out of balance they can no longer use services that cost.
+When ever a user uses a subscription or onetime-payment, then user balance is used.
+When a user runs out of balance, they can no longer use services that cost.
 
 metered subscription provide unlimited usage. But
 
@@ -361,7 +365,24 @@ pub enum Role {
     Client,
 }
 
-pub struct TestEncryption {
+/*
+* The encryption has version control built in
+* The format is Encryption:Version,
+* None: uses no encryption.
+* AES256: uses server side encryption.
+* Zero-Knowledge: uses client side encryption.
+* Custom: uses custom encryption. Relies on the client implementing the encryption specifics.
+*/
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Encryption {
+    None,
+    AES256(u8),
+    ZeroKnowledge(u8),
+    // Must start with 'Custom-' and then the name of the encryption. with a max length of 64 characters entirely.
+    Custom(String),
+}
+
+pub struct BucketEncryption {
     // Who is responsible for the encryption?
     pub responsible: Role,
     // The encryption to be used. 
@@ -372,7 +393,7 @@ pub struct TestEncryption {
     pub version: u32,
 }
 
-impl Display for TestEncryption {
+impl Display for BucketEncryption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let signature_str = match &self.signature {
             Some(sig) => sig,
@@ -394,7 +415,7 @@ pub enum TestEncryptionParsingError {
     InvalidRole,
     InvalidVersion,
 }
-impl FromStr for TestEncryption
+impl FromStr for BucketEncryption
 {
     type Err = TestEncryptionParsingError;
 
@@ -418,7 +439,7 @@ impl FromStr for TestEncryption
             Err(_) => return Err(TestEncryptionParsingError::InvalidVersion),
         };
 
-        Ok(TestEncryption {
+        Ok(BucketEncryption {
             responsible: role,
             encryption,
             signature,
@@ -426,22 +447,7 @@ impl FromStr for TestEncryption
         })
     }
 }
-/*
-* The encryption has version control built in
-* The format is Encryption:Version,
-* None: uses no encryption.
-* AES256: uses server side encryption.
-* Zero-Knowledge: uses client side encryption.
-* Custom: uses custom encryption. Relies on the client implementing the encryption specifics.
-*/
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum BucketEncryption {
-    None,
-    AES256(u8),
-    ZeroKnowledge(u8),
-    // Must start with 'Custom-' and then the name of the encryption. with a max length of 64 characters entirely.
-    Custom(String),
-}
+
 
 #[derive(Debug, Clone, Eq, PartialEq, thiserror::Error)]
 pub enum BucketEncryptionParsingError {
@@ -455,7 +461,7 @@ pub enum BucketEncryptionParsingError {
     FaieldToParseVersion(#[from] ParseIntError),
 }
 
-impl FromStr for BucketEncryption {
+impl FromStr for Encryption {
     type Err = BucketEncryptionParsingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -464,7 +470,7 @@ impl FromStr for BucketEncryption {
             .next()
             .ok_or(BucketEncryptionParsingError::InvalidDelimiter)?;
         match encryption {
-            "None" => Ok(BucketEncryption::None),
+            "None" => Ok(Encryption::None),
             "AES256" | "ZeroKnowledge" => {
                 let version = u8::from_str(
                     parts
@@ -472,8 +478,8 @@ impl FromStr for BucketEncryption {
                         .ok_or(BucketEncryptionParsingError::InvalidDelimiter)?,
                 )?;
                 match encryption {
-                    "AES256" => Ok(BucketEncryption::AES256(version)),
-                    "ZeroKnowledge" => Ok(BucketEncryption::ZeroKnowledge(version)),
+                    "AES256" => Ok(Encryption::AES256(version)),
+                    "ZeroKnowledge" => Ok(Encryption::ZeroKnowledge(version)),
                     _ => unreachable!(), // Should not reach here due to match patterns
                 }
             }
@@ -481,20 +487,20 @@ impl FromStr for BucketEncryption {
                 if x.len() > 71 {
                     return Err(BucketEncryptionParsingError::CustomFormatTooLong);
                 }
-                Ok(BucketEncryption::Custom(s.to_string()))
+                Ok(Encryption::Custom(s.to_string()))
             }
             _ => Err(BucketEncryptionParsingError::InvalidFormat),
         }
     }
 }
 
-impl Display for BucketEncryption {
+impl Display for Encryption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BucketEncryption::None => write!(f, "None"),
-            BucketEncryption::AES256(version) => write!(f, "AES256:{}", version),
-            BucketEncryption::ZeroKnowledge(version) => write!(f, "ZeroKnowledge:{}", version),
-            BucketEncryption::Custom(name) => write!(f, "Custom-{}", name),
+            Encryption::None => write!(f, "None"),
+            Encryption::AES256(version) => write!(f, "AES256:{}", version),
+            Encryption::ZeroKnowledge(version) => write!(f, "ZeroKnowledge:{}", version),
+            Encryption::Custom(name) => write!(f, "Custom-{}", name),
         }
     }
 }
@@ -573,14 +579,14 @@ bitflags::bitflags! {
 
 // BucketGuid is a combination between user_id and bucket_id.
 // Max character length of 63 for aws s3 bucket name https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BucketGuid {
     pub user_id: uuid::Uuid,
     pub bucket_id: uuid::Uuid,
 }
 
 // Implements to string trait also.
-impl Display for BucketGuid {
+impl fmt::Display for BucketGuid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let res = write!(
             f,
@@ -611,35 +617,35 @@ mod bucket_encryption_tests {
     fn test_validate_bucket_encryption() {
         // Test valid inputs
         assert_eq!(
-            BucketEncryption::from_str("None"),
-            Ok(BucketEncryption::None)
+            Encryption::from_str("None"),
+            Ok(Encryption::None)
         );
 
         assert_eq!(
-            BucketEncryption::from_str("AES256:1"),
-            Ok(BucketEncryption::AES256(1))
+            Encryption::from_str("AES256:1"),
+            Ok(Encryption::AES256(1))
         );
         
 
 
         assert_eq!(
-            BucketEncryption::from_str("ZeroKnowledge:2"),
-            Ok(BucketEncryption::ZeroKnowledge(2))
+            Encryption::from_str("ZeroKnowledge:2"),
+            Ok(Encryption::ZeroKnowledge(2))
         );
 
         assert_eq!(
-            BucketEncryption::from_str("Custom-MyEncryption"),
-            Ok(BucketEncryption::Custom("Custom-MyEncryption".to_string()))
+            Encryption::from_str("Custom-MyEncryption"),
+            Ok(Encryption::Custom("Custom-MyEncryption".to_string()))
         );
 
         // Test invalid formats
         assert_eq!(
-            BucketEncryption::from_str("InvalidEncryption"),
+            Encryption::from_str("InvalidEncryption"),
             Err(BucketEncryptionParsingError::InvalidFormat)
         );
 
         assert_eq!(
-            BucketEncryption::from_str("AES256"), // Missing version
+            Encryption::from_str("AES256"), // Missing version
             Err(BucketEncryptionParsingError::InvalidDelimiter)
         );
 
@@ -648,38 +654,38 @@ mod bucket_encryption_tests {
     #[test]
     fn test_valid_bucket_encryption_parsing() {
         assert_eq!(
-            "None".parse::<BucketEncryption>(),
-            Ok(BucketEncryption::None)
+            "None".parse::<Encryption>(),
+            Ok(Encryption::None)
         );
         assert_eq!(
-            "AES256:42".parse::<BucketEncryption>(),
-            Ok(BucketEncryption::AES256(42))
+            "AES256:42".parse::<Encryption>(),
+            Ok(Encryption::AES256(42))
         );
         assert_eq!(
-            "ZeroKnowledge:5".parse::<BucketEncryption>(),
-            Ok(BucketEncryption::ZeroKnowledge(5))
+            "ZeroKnowledge:5".parse::<Encryption>(),
+            Ok(Encryption::ZeroKnowledge(5))
         );
         assert_eq!(
-            "Custom-Test".parse::<BucketEncryption>(),
-            Ok(BucketEncryption::Custom("Custom-Test".to_string()))
+            "Custom-Test".parse::<Encryption>(),
+            Ok(Encryption::Custom("Custom-Test".to_string()))
         );
     }
 
     #[test]
     fn test_invalid_bucket_encryption_parsing() {
-        assert!("Invalid".parse::<BucketEncryption>().is_err());
-        assert!("AES256:".parse::<BucketEncryption>().is_err()); // Missing version
-        assert!(":42".parse::<BucketEncryption>().is_err()); // Missing encryption type
+        assert!("Invalid".parse::<Encryption>().is_err());
+        assert!("AES256:".parse::<Encryption>().is_err()); // Missing version
+        assert!(":42".parse::<Encryption>().is_err()); // Missing encryption type
         assert!(
             "Custom-ThisIsAVeryLongStringThatShouldFailToParseWithOver64CharactersXXX"
-                .parse::<BucketEncryption>()
+                .parse::<Encryption>()
                 .is_err()
         ); // Too long custom encryption
     }
 
     #[test]
     fn test_invalid_version() {
-        assert!("AES256:invalid".parse::<BucketEncryption>().is_err()); // Invalid version
+        assert!("AES256:invalid".parse::<Encryption>().is_err()); // Invalid version
     }
 
     #[test]
@@ -687,13 +693,13 @@ mod bucket_encryption_tests {
         let long_custom_encryption = format!("Custom-{}", "x".repeat(63)); // Create a custom encryption of max length
 
         assert_eq!(
-            long_custom_encryption.parse::<BucketEncryption>(),
-            Ok(BucketEncryption::Custom(long_custom_encryption))
+            long_custom_encryption.parse::<Encryption>(),
+            Ok(Encryption::Custom(long_custom_encryption))
         );
 
         let too_long_custom_encryption = format!("Custom-{}", "x".repeat(65)); // Exceeds max length
         assert!(too_long_custom_encryption
-            .parse::<BucketEncryption>()
+            .parse::<Encryption>()
             .is_err());
     }
 }

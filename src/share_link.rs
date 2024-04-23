@@ -10,14 +10,22 @@ use crate::util::{DOMAIN_URL, SHARE_PATH_URL};
 bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
     pub struct BucketSharePermissionFlags : u32 {
-        const VIEW =            0b00000000_00000000_00000000_00000001; // The ability to view the bucket files, but not read or write. basically just view the file-structure.
-        const READ =            0b00000000_00000000_00000000_00000010; // The ability to read from the bucket.
-        const WRITE =           0b00000000_00000000_00000000_00000100; // The ability to write to the bucket.
-        const DELETE_FILE =     0b00000000_00000000_00000000_00001000; // The ability to delete file from the bucket.
-        const DELETE_BUCKET =   0b00000000_00000000_00000000_00010000; // The ability to delete the bucket
-        const SHARE_BUCKET =    0b00000000_00000000_00000000_00100000; // The ability to share the bucket with others.
-        const CLONE =           0b00000000_00000000_00000000_01000000; // The ability to clone the bucket.
-        const SEARCH =          0b00000000_00000000_00000000_10000000; // The ability to search inside the bucket.
+        // The ability to view the bucket files, but not read or write. basically just view the file-structure.
+        const VIEW =            0b00000000_00000000_00000000_00000001;
+        /// The ability to read from the bucket.
+        const READ =            0b00000000_00000000_00000000_00000010;
+        /// The ability to write to the bucket.
+        const WRITE =           0b00000000_00000000_00000000_00000100;
+        /// The ability to delete file from the bucket.
+        const DELETE_FILE =     0b00000000_00000000_00000000_00001000;
+        /// The ability to delete the bucket
+        const DELETE_BUCKET =   0b00000000_00000000_00000000_00010000;
+        /// The ability to share the bucket with others, avoid.
+        const SHARE_BUCKET =    0b00000000_00000000_00000000_00100000;
+        /// The ability to clone the bucket, .
+        const CLONE =           0b00000000_00000000_00000000_01000000;
+        /// The ability to search inside the bucket.
+        const SEARCH =          0b00000000_00000000_00000000_10000000;
     }
 }
 

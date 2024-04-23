@@ -5,11 +5,115 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::str::FromStr;
 
+use logos::Logos;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 use url::Url;
+use uuid::Uuid;
 
 // https://bucketdrive.co/search/query=
+//TODO: use logos for tokens.
+
+#[derive(Logos, Debug)]
+pub enum SearchTokenKey {
+    #[token("bucket:")]
+    #[token("/")]
+    Bucket,
+    #[token("user:")]
+    #[token("@")]
+    User,
+    #[token("desc:")]
+    #[token("description:")]
+    #[token("!")]
+    Description,
+    #[token("tag:")]
+    #[token("#")]
+    Tag,
+    #[regex(r#"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"#, |lex| uuid::Uuid::parse_str(lex.slice()).unwrap() )]
+    UuidValue(Uuid),
+    #[regex(r#"[a-zA-Z0-9]+"#, |lex| lex.slice().to_owned())]
+    Word(String),
+    #[regex(r#""[^"]*""#, |lex| lex.slice().to_owned())]
+    MultiWord(String),
+}
+
+pub enum UuidStringUnion {
+    String(String),
+    Uuid(Uuid),
+}
+
+pub enum SearchTokensValue {
+    // either name of user or bucket.
+    User(UuidStringUnion),
+    // either name of bucket or uuid of bucket.
+    Bucket(UuidStringUnion),
+    // Tag is a String only of one word.
+    Tag(String),
+    // description is a String of one or many words.
+    Description(String),
+}
+
+pub fn parse_search(search: &str) -> Vec<SearchTokensValue> {
+    let mut token_values = Vec::<SearchTokensValue>::new();
+    let mut lexer = SearchTokenKey::lexer(search);
+    while let Some(token) = lexer.next() {
+        match token {
+            Ok(SearchTokenKey::Bucket) => {
+                if let Some(token_val) = lexer.next() {
+                    match token_val {
+                        Ok(SearchTokenKey::UuidValue(id)) => {
+                            token_values.push(SearchTokensValue::Bucket(UuidStringUnion::Uuid(id)));
+                        }
+                        Ok(SearchTokenKey::Word(word)) => {
+                            token_values.push(SearchTokensValue::Bucket(UuidStringUnion::String(word.to_string())));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Ok(SearchTokenKey::User) => {
+                if let Some(token_val) = lexer.next() {
+                    match token_val {
+                        Ok(SearchTokenKey::UuidValue(id)) => {
+                            token_values.push(SearchTokensValue::User(UuidStringUnion::Uuid(id)));
+                        }
+                        Ok(SearchTokenKey::Word(word)) => {
+                            token_values.push(SearchTokensValue::User(UuidStringUnion::String(word.to_string())));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Ok(SearchTokenKey::Description) => {
+                if let Some(token_val) = lexer.next() {
+                    match token_val {
+                        Ok(SearchTokenKey::MultiWord(multi_word)) => {
+                            token_values.push(SearchTokensValue::Description(multi_word.to_string()));
+                        }
+                        Ok(SearchTokenKey::Word(word)) => {
+                            token_values.push(SearchTokensValue::Description(word.to_string()));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Ok(SearchTokenKey::Tag) => {
+                if let Some(token_val) = lexer.next() {
+                    match token_val {
+                        Ok(SearchTokenKey::Word(word)) => {
+                            token_values.push(SearchTokensValue::Tag(word.to_string()));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    token_values
+}
+
+pub enum SearchValue {}
 
 #[derive(EnumIter, Debug, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, Clone, Hash)]
 pub enum SearchFlags {
@@ -87,7 +191,6 @@ pub enum BucketSearchInputQueryParsingError {
     TooManyDescriptionFlags,
 }
 
-
 impl FromStr for BucketSearchQuery {
     type Err = BucketSearchInputQueryParsingError;
     // Note this function is for user input.
@@ -128,7 +231,6 @@ impl FromStr for BucketSearchQuery {
             }
         }
         flags.sort();
- 
 
         Ok(BucketSearchQuery { query, flags })
     }
@@ -147,7 +249,6 @@ impl TryFrom<url::Url> for BucketSearchQuery {
 }
 
 impl BucketSearchQuery {
-
     // Convert struct into a search URL
     // Should be in the format of "bucketdrive.co/search/:user_id/:bucket_id/#desc=:desc#tag={:tag..}"
     pub fn to_search_url(&self) -> Url {

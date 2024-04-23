@@ -1,9 +1,12 @@
-// Path implementation for bucket.
+use std::fmt::Debug;
+use std::fmt::Display;
 
 use crate::BucketGuid;
 
-#[derive(Debug, Display, Eq)]
-struct BucketPath {
+// Path implementation for bucket.
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct BucketPath {
     pub bucket_guid: BucketGuid, 
     pub path: String,
 }
