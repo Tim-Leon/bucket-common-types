@@ -360,6 +360,7 @@ pub enum PaymentModel {
 }
 
 #[derive(EnumString, PartialEq, Debug, Serialize, strum::Display, Clone, Eq, Deserialize)]
+#[repr(u8)]
 pub enum Role {
     #[strum(serialize = "S")]
     Server,
@@ -392,7 +393,7 @@ pub struct BucketEncryption {
     pub encryption: String,
     // either AEAD or Hash-based-signature, can use both to verify integrity.
     pub signature: Option<String>,
-    // Version of the encryption implementation
+    // Version of the encryption implementation TODO: move to first field and fix parser and display
     pub version: u32,
 }
 
@@ -572,7 +573,7 @@ pub enum PaymentMethod {
 }
 
 bitflags::bitflags! {
-    /// NOTE* can not just cast verifaction between u32 and i32 because of bit flip
+    /// NOTE* can not just cast verification between u32 and i32 because of bit flip
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
     pub struct Verification : i16 {
         const UNVERIFIED = 0b0000_0000_0000_0000;
@@ -584,7 +585,7 @@ bitflags::bitflags! {
 
 // BucketGuid is a combination between user_id and bucket_id.
 // Max character length of 63 for aws s3 bucket name https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct BucketGuid {
     pub user_id: uuid::Uuid,
     pub bucket_id: uuid::Uuid,
@@ -599,10 +600,10 @@ impl fmt::Display for BucketGuid {
             self.user_id.as_simple(),
             &self.bucket_id.simple().to_string()[..31] // Remove last 32nd character
         );
-        // assert!(
-        //     f.width().unwrap() <= 63, //Cehck if width() is correct usage.
-        //     "Bucket name is too long and will cause issue with S3-API."
-        // );
+        debug_assert!(
+            f.width().unwrap() <= 63, //Check if width() is correct usage.
+            "Bucket name is too long and will cause issue with S3-API."
+        );
         res
     }
 }

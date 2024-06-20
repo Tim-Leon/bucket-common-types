@@ -1,20 +1,20 @@
 #![cfg(feature = "secret_share_link")]
 
-use aes_gcm::{Aes256Gcm};
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
+
 use aes_gcm;
-use base64::{engine::general_purpose, Engine};
+use aes_gcm::Aes256Gcm;
+use base64::{Engine, engine::general_purpose};
 use digest::generic_array::GenericArray;
 use digest::OutputSizeUser;
 use ed25519_compact::Noise;
 use sha3::{Digest, Sha3_224};
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
 use time::OffsetDateTime;
 
-use crate::util::SECRET_SHARE_PATH_URL;
-use crate::{Encryption, BucketRegion, RegionCluster};
+use crate::{Encryption, RegionCluster};
 use crate::{share_link::BucketSharePermissionFlags, util::DOMAIN_URL};
-
+use crate::util::SECRET_SHARE_PATH_URL;
 
 // https:eu-central-1.1.bucketdrive.co/share/0#user_id#bucket_id#bucket_encryption#bucket_key#permission#expires#signature
 

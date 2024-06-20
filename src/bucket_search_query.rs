@@ -303,7 +303,7 @@ mod tests {
 
     #[test]
     fn parsing_url_input_test() {
-        let test_query = Url::parse("bucketdrive.co/123e4567-e89b-12d3-a456-426614174000/123e4567-e89b-12d3-a456-426614174000#desc=description#tag=tag1;tag2").unwrap();
+        let test_query = Url::parse("https://bucketdrive.co/123e4567-e89b-12d3-a456-426614174000/123e4567-e89b-12d3-a456-426614174000#desc=description#tag=tag1;tag2").unwrap();
         let query = BucketSearchQuery::try_from(test_query).unwrap();
 
         let expected_bucket_id = Uuid::parse_str("123e4567-e89b-12d3-a456-426614174000").unwrap();
