@@ -34,7 +34,7 @@ uuid = { version = "1.4.1" , features = ["serde", "v4"]}
 rand = "0.8.5"
 serde_with = "3.4.0"
 convert_case = "0.6.0"
-prost-types = "0.12.3"
+prost-types = "0.13.1"
 logos = "0.14.0"
 
 [dev-dependencies]
