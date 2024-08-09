@@ -21,6 +21,7 @@ pub mod share_link;
 pub mod unix_timestamp;
 pub mod util;
 pub mod bucket_path;
+mod webhook_event;
 
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum WebhookSignatureScheme {
@@ -256,20 +257,21 @@ impl FromStr for RegionCluster {
     }
 }
 
+
+/// Whenever a bucket is created, compression is set to one of these values or potentially none.
+/// Custom compression is also supported but requires the developer to implement the required traits.
 #[derive(
 Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
+#[strum(serialize_all = "lowercase")]
 pub enum BucketCompression {
-    ServerGzip,
-    ServerBrotli,
-    ServerZstd,
-
-    ClientGzip,
-    ClientBrotli,
-    ClientZstd,
-
-    ClientCustom(String),
+    Gzip,
+    Brotli,
+    Zstd,
+    Custom(String),
 }
+
+
 
 /*
 Video Codec Support Matrix TODO: Add...
