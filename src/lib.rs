@@ -273,6 +273,7 @@ pub enum BucketCompression {
     Gzip,
     Brotli,
     Zstd,
+    Lz4,
     Custom(String),
 }
 
