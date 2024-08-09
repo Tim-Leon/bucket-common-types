@@ -29,10 +29,15 @@ pub enum WebhookSignatureScheme {
     HmacSha256,
 }
 
-
+/// Theses are all the supported encoding for files that are uploaded or downloaded.
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
-pub enum ContentEncoding {
-    LZ4
+pub enum Encoding {
+    LZ4,
+    Zstd,
+    Brotli,
+    Deflate,
+    Gzip,
+    Custom(String),
 }
 
 // Inspired https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
