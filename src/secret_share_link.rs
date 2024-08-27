@@ -12,9 +12,10 @@ use ed25519_compact::Noise;
 use sha3::{Digest, Sha3_224};
 use time::OffsetDateTime;
 
-use crate::{Encryption, RegionCluster};
 use crate::{share_link::BucketSharePermissionFlags, util::DOMAIN_URL};
-use crate::util::SECRET_SHARE_PATH_URL;
+use crate::encryption::EncryptionAlgorithm;
+use crate::region::RegionCluster;
+use crate::util::{DOMAIN_NAME, SECRET_SHARE_PATH_URL};
 
 // https:eu-central-1.1.bucketdrive.co/share/0#user_id#bucket_id#bucket_encryption#bucket_key#permission#expires#signature
 
@@ -33,7 +34,7 @@ pub struct SecretShareLink {
     // Only the official supported bucket encryption can be used on the website,
     // any encryption that fal under custom will only be supported by client
     // that has the implementation necessary.
-    pub bucket_encryption: Encryption,
+    pub bucket_encryption: EncryptionAlgorithm,
     // Currently we limit the key size to at most 4096-bit encryption keys.
     pub bucket_key: aes_gcm::Key<Aes256Gcm>,
     pub permission: BucketSharePermissionFlags,
@@ -67,7 +68,8 @@ impl Display for SecretShareLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}.{}{}/{}/{}#{}#{}#{}#{}",
+            "{}{}.{}{}/{}/{}#{}#{}#{}#{}",
+            "https://",
             self.region_cluster.to_string(),
             DOMAIN_URL,
             SECRET_SHARE_PATH_URL,
@@ -88,7 +90,6 @@ pub enum SecretShareLinkParsingError {
     InvalidHostDomain,
     #[error("Invalid version format")]
     InvalidVersionFormat,
-
     #[error(transparent)]
     Base64Decoding(#[from] base64::DecodeError),
     #[error(transparent)]
@@ -101,11 +102,15 @@ impl TryFrom<url::Url> for SecretShareLink {
     fn try_from(value: url::Url) -> Result<Self, Self::Error> {
         let domain = value.domain().ok_or(Self::Error::InvalidHostDomain)?;
         let subdomains = domain.split(".").collect::<Vec<&str>>();
-
-        let tld = subdomains[subdomains.len()];
-        let domain_name = subdomains[subdomains.len()-1];
-        let subdomain = subdomains[subdomains.len()-2];
-        if domain_name != DOMAIN_URL {
+        if subdomains.len() != 3 {
+            return Err(Self::Error::InvalidHostDomain);
+        }
+        let (subdomain, domain_name, tld) = (
+            subdomains[0],
+            subdomains[1],
+            subdomains[2],
+        );
+        if domain_name != DOMAIN_NAME {
             return Err(Self::Error::InvalidHostDomain);
         }
 
@@ -155,7 +160,7 @@ impl TryFrom<url::Url> for SecretShareLink {
             region_cluster,
             user_id,
             bucket_id,
-            bucket_encryption: Encryption::None,
+            bucket_encryption: EncryptionAlgorithm::None,
             bucket_key,
             permission,
             expires,
@@ -217,7 +222,7 @@ impl SecretShareLink {
             region_cluster,
             user_id,
             bucket_id,
-            bucket_encryption: Encryption::None,
+            bucket_encryption: EncryptionAlgorithm::None,
             bucket_key,
             permission,
             expires,
@@ -304,8 +309,8 @@ mod tests {
         let bucket_key = aes_gcm::Key::<Aes256Gcm>::from_slice(&bucket_key_bytes);
         let permission = BucketSharePermissionFlags::VIEW; //You need to replace ValorA
         let expires = OffsetDateTime::now_utc();
-        let secret_key = ed25519_compact::SecretKey::from_slice(&[0u8; 32]).unwrap();
-        let region_cluster = RegionCluster::from_str("central-eu-1:1").unwrap();
+        let secret_key = ed25519_compact::SecretKey::from_slice(&[0u8; 64]).unwrap();
+        let region_cluster = RegionCluster::from_str("eu-central-1-1").unwrap();
 
         // Create a SecretShareLink
         let original_link = SecretShareLink::new(

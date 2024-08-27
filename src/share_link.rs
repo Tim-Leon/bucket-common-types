@@ -20,7 +20,7 @@ bitflags::bitflags! {
         const DELETE_FILE =     0b00000000_00000000_00000000_00001000;
         /// The ability to delete the bucket
         const DELETE_BUCKET =   0b00000000_00000000_00000000_00010000;
-        /// The ability to share the bucket with others, avoid.
+        /// The ability to share the bucket with others, avoid it.
         const SHARE_BUCKET =    0b00000000_00000000_00000000_00100000;
         /// The ability to clone the bucket, .
         const CLONE =           0b00000000_00000000_00000000_01000000;

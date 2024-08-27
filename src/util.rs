@@ -1,4 +1,5 @@
 pub const DOMAIN_URL: &str = "bucketdrive.co";
+pub const DOMAIN_NAME: &str = "bucketdrive";
 // Special filenames, don't use theses file names if you want to use default implementation of compression and client-side encryption.
 // They are mad of 200 random numbers followed by appropriate extension.
 pub const V1_FILENAME_SIGNATURE: &str =             "92788755736028022379305121440842586143418638236105851711197675179013382161072356419825278198723874874874859494628870810121940733961303339530173577799516328942537106587822423670792506928743842632331152.signature";
