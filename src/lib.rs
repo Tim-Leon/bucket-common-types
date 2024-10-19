@@ -29,8 +29,9 @@ pub mod compression;
 pub mod payment;
 pub mod region;
 
-#[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]
+#[derive(Clone, Default, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum WebhookSignatureScheme {
+    #[default]
     ED25519,
     HmacSha256,
 }
@@ -97,9 +98,10 @@ pub enum AvailabilityStatus {
 * Reduced Redundancy: Will use HDD but with less redundancy and more risk for the end user.
 */
 #[derive(
-Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Default, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum BucketStorageClass {
+    #[default]
     General,
     ReducedRedundancy,
 }
@@ -118,7 +120,7 @@ pub enum Role {
 }
 
 #[derive(
-Debug, Clone, Copy, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Default , Copy, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum BucketVisibility {
     /// Anyone can see the bucket
@@ -126,6 +128,7 @@ pub enum BucketVisibility {
     /// Only author and invited users can see the bucket, Bucket will be made private-shared if private bucket is shared.
     PrivateShared,
     /// Only author.
+    #[default]
     Private,
 }
 
@@ -141,9 +144,10 @@ bitflags::bitflags! {
 }
 
 #[derive(
-Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
+Debug, Clone, Default, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]
 pub enum DownloadFormat {
+    #[default]
     Raw,
     Zip,
     Tar,
