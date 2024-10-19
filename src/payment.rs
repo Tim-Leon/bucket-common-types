@@ -40,7 +40,6 @@ The user is able to do one time payments as well whenever.
 The payment plans available will be
 
 Pricing
-- Pay Once.
 - Metered. (Pay per usage)
 - Subscription.
 - One Time Payment.

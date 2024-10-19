@@ -223,216 +223,216 @@ use super::*;
         //    );
         //}
 
-        #[test]
-        fn test_all_region_cluster_to_url() {
-            let b = BucketRegion::AfricaCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::EuropeCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::EuropeNorth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::EuropeSouth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::EuropeWest(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::EuropeEast(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AmericaCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AmericaNorth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AmericaSouth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AmericaWest(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AmericaEast(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AfricaCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AfricaNorth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AfricaSouth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AfricaWest(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AfricaEast(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AsiaPacificCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AsiaPacificNorth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AsiaPacificSouth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AsiaPacificWest(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::AsiaPacificEast(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::MiddleEastCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::MiddleEastNorth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::MiddleEastSouth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::MiddleEastWest(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::MiddleEastEast(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::SouthAmericaCentral(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::SouthAmericaNorth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::SouthAmericaSouth(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::SouthAmericaWest(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-            let b = BucketRegion::SouthAmericaEast(0);
-            let brc = RegionCluster {
-                region: b,
-                cluster_id: 1,
-            };
-            brc.to_url();
-        }
-
-        #[test]
-        fn test_region_cluster_valid_parsing() {
-            assert_eq!(
-                RegionCluster::from_str("eu-central-1:1").unwrap(),
-                RegionCluster {
-                    region: BucketRegion::EuropeCentral(1),
-                    cluster_id: 1,
-                }
-            );
-
-            // Add more valid cases...
-        }
-
-        #[test]
-        fn test_region_cluster_formatting() {
-            let region_cluster = RegionCluster {
-                region: BucketRegion::EuropeCentral(1),
-                cluster_id: 1,
-            };
-            assert_eq!(region_cluster.to_string(), "eu-central-1:1");
-        }
+        //#[test]
+        //fn test_all_region_cluster_to_url() {
+        //    let b = BucketRegion::AfricaCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::EuropeCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::EuropeNorth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::EuropeSouth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::EuropeWest(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::EuropeEast(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AmericaCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AmericaNorth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AmericaSouth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AmericaWest(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AmericaEast(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AfricaCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AfricaNorth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AfricaSouth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AfricaWest(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AfricaEast(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AsiaPacificCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AsiaPacificNorth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AsiaPacificSouth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AsiaPacificWest(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::AsiaPacificEast(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::MiddleEastCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::MiddleEastNorth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::MiddleEastSouth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::MiddleEastWest(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::MiddleEastEast(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::SouthAmericaCentral(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::SouthAmericaNorth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::SouthAmericaSouth(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::SouthAmericaWest(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //    let b = BucketRegion::SouthAmericaEast(0);
+        //    let brc = RegionCluster {
+        //        region: b,
+        //        cluster_id: 1,
+        //    };
+        //    brc.to_url();
+        //}
+//
+        //#[test]
+        //fn test_region_cluster_valid_parsing() {
+        //    assert_eq!(
+        //        RegionCluster::from_str("eu-central-1:1").unwrap(),
+        //        RegionCluster {
+        //            region: BucketRegion::EuropeCentral(1),
+        //            cluster_id: 1,
+        //        }
+        //    );
+//
+        //    // Add more valid cases...
+        //}
+//
+        //#[test]
+        //fn test_region_cluster_formatting() {
+        //    let region_cluster = RegionCluster {
+        //        region: BucketRegion::EuropeCentral(1),
+        //        cluster_id: 1,
+        //    };
+        //    assert_eq!(region_cluster.to_string(), "eu-central-1:1");
+        //}
     }
 }

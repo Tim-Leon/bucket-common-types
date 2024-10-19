@@ -12,30 +12,37 @@ use std::fmt::Display;
 use std::num::ParseIntError;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, EnumString};
 use crate::Role;
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, strum::Display)]
 pub enum EncryptionAlgorithm {
     None,
-    AES256(u8),
-    ZeroKnowledge(u8),
+    AES256,
+    ChaCha20Poly1305,
+    XChaCha20Poly1305,
     // Must start with 'Custom-' and then the name of the encryption. with a max length of 64 characters entirely.
+    #[strum(to_string = "custom-{0}")]
     Custom(String),
 }
 
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct BucketEncryption {
-    // Version of the encryption implementation
+pub struct BucketEncryptionScheme {
+    /// The version of the encryption scheme implementation.
+    /// This field tracks changes in the encryption method over time.
     pub version: u32,
-    /// Who is responsible for the encryption?
+
+    /// Specifies who is responsible for managing the encryption of the bucket.
+    /// The responsible entity can be identified by the `Role` enum (e.g., `Owner`, `CloudProvider`).
     pub responsible: Role,
-    // The encryption to be used.
+
+    /// The encryption algorithm used to secure the data in the bucket.
+    /// This is represented by the `EncryptionAlgorithm` enum.
     pub encryption: EncryptionAlgorithm,
 }
 
-impl Display for BucketEncryption {
+impl Display for BucketEncryptionScheme {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 
         write!(
@@ -55,7 +62,7 @@ pub enum BucketEncryptionParsingError {
     InvalidVersion,
 }
 //TODO: https://github.com/P3KI/bendy
-impl FromStr for BucketEncryption
+impl FromStr for BucketEncryptionScheme
 {
     type Err = BucketEncryptionParsingError;
 
@@ -79,7 +86,7 @@ impl FromStr for BucketEncryption
             Err(_) => return Err(BucketEncryptionParsingError::InvalidVersion),
         };
 
-        Ok(BucketEncryption {
+        Ok(BucketEncryptionScheme {
             responsible: role,
             encryption: EncryptionAlgorithm::from_str(encryption.as_str()).unwrap(),
             version,
@@ -97,7 +104,7 @@ pub enum EncryptionParsingError {
     #[error("invalid delimiter")]
     InvalidDelimiter,
     #[error(transparent)]
-    FaieldToParseVersion(#[from] ParseIntError),
+    FailedToParseVersion(#[from] ParseIntError),
 }
 
 impl FromStr for EncryptionAlgorithm {
@@ -108,39 +115,8 @@ impl FromStr for EncryptionAlgorithm {
         let encryption = parts
             .next()
             .ok_or(EncryptionParsingError::InvalidDelimiter)?;
-        match encryption {
-            "None" => Ok(EncryptionAlgorithm::None),
-            "AES256" | "ZeroKnowledge" => {
-                let version = u8::from_str(
-                    parts
-                        .next()
-                        .ok_or(EncryptionParsingError::InvalidDelimiter)?,
-                )?;
-                match encryption {
-                    "AES256" => Ok(EncryptionAlgorithm::AES256(version)),
-                    "ZeroKnowledge" => Ok(EncryptionAlgorithm::ZeroKnowledge(version)),
-                    _ => unreachable!(), // Should not reach here due to match patterns
-                }
-            }
-            x if x.starts_with("Custom-") => {
-                if x.len() > 71 {
-                    return Err(EncryptionParsingError::CustomFormatTooLong);
-                }
-                Ok(EncryptionAlgorithm::Custom(s.to_string()))
-            }
-            _ => Err(EncryptionParsingError::InvalidFormat),
-        }
-    }
-}
-
-impl Display for EncryptionAlgorithm {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            EncryptionAlgorithm::None => write!(f, "None"),
-            EncryptionAlgorithm::AES256(version) => write!(f, "AES256:{}", version),
-            EncryptionAlgorithm::ZeroKnowledge(version) => write!(f, "ZeroKnowledge:{}", version),
-            EncryptionAlgorithm::Custom(name) => write!(f, "Custom-{}", name),
-        }
+        let encryption = EncryptionAlgorithm::from_str(encryption)?;
+        Ok(encryption)
     }
 }
 #[cfg(test)]
@@ -156,19 +132,14 @@ mod bucket_encryption_tests {
         );
 
         assert_eq!(
-            EncryptionAlgorithm::from_str("AES256:1"),
-            Ok(EncryptionAlgorithm::AES256(1))
+            EncryptionAlgorithm::from_str("AES256"),
+            Ok(EncryptionAlgorithm::AES256)
         );
 
 
         assert_eq!(
-            EncryptionAlgorithm::from_str("ZeroKnowledge:2"),
-            Ok(EncryptionAlgorithm::ZeroKnowledge(2))
-        );
-
-        assert_eq!(
-            EncryptionAlgorithm::from_str("Custom-MyEncryption"),
-            Ok(EncryptionAlgorithm::Custom("Custom-MyEncryption".to_string()))
+            EncryptionAlgorithm::from_str("custom-MyEncryption"),
+            Ok(EncryptionAlgorithm::Custom("custom-MyEncryption".to_string()))
         );
 
         // Test invalid formats
@@ -190,13 +161,10 @@ mod bucket_encryption_tests {
             Ok(EncryptionAlgorithm::None)
         );
         assert_eq!(
-            "AES256:42".parse::<EncryptionAlgorithm>(),
-            Ok(EncryptionAlgorithm::AES256(42))
+            "AES256".parse::<EncryptionAlgorithm>(),
+            Ok(EncryptionAlgorithm::AES256)
         );
-        assert_eq!(
-            "ZeroKnowledge:5".parse::<EncryptionAlgorithm>(),
-            Ok(EncryptionAlgorithm::ZeroKnowledge(5))
-        );
+
         assert_eq!(
             "Custom-Test".parse::<EncryptionAlgorithm>(),
             Ok(EncryptionAlgorithm::Custom("Custom-Test".to_string()))
