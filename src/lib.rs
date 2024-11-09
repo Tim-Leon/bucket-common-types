@@ -1,33 +1,41 @@
+#![feature(slice_pattern)]
+#![feature(slice_split_once)]
+#![feature(associated_type_defaults)]
+extern crate core;
+
+use core::slice::SlicePattern;
+use serde::de::Expected;
+use serde::{Deserialize, Serialize, Serializer};
+use std::fmt::{Debug, LowerExp};
 use std::{
-    fmt::{self, Display},
-    num::ParseIntError,
+    fmt::Display,
     str::FromStr,
 };
-use std::env::var;
-use std::fmt::{Debug, Formatter, LowerExp};
-use serde::{Deserialize, Serialize, Serializer};
-use serde::de::Expected;
-use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
-use util::DOMAIN_URL;
+use strum::IntoEnumIterator;
+
 
 #[cfg(feature = "search_query")]
 pub mod bucket_search_query;
-#[cfg(feature = "secret_share_link")]
-#[cfg(feature = "share_link")]
-pub mod exclusive_share_link;
-#[cfg(feature = "secret_share_link")]
-pub mod secret_share_link;
-#[cfg(feature = "share_link")]
-pub mod share_link;
 #[cfg(feature = "unix_timestamp")]
 pub mod unix_timestamp;
 pub mod util;
-pub mod bucket_path;
 pub mod encryption;
 pub mod webhook;
 pub mod compression;
 pub mod payment;
 pub mod region;
+#[cfg(feature = "middleware")]
+pub mod middleware;
+#[cfg(feature = "key")]
+pub mod key;
+
+pub mod storage_engine;
+pub mod bucket;
+pub mod share;
+pub mod authentication;
+mod user_settings;
+mod token;
+mod token;
 
 #[derive(Clone, Default, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum WebhookSignatureScheme {
@@ -106,42 +114,20 @@ pub enum BucketStorageClass {
     ReducedRedundancy,
 }
 
+
+
+
+
+
 pub struct BucketRedundancy {}
 
 
 
-#[derive(EnumString, PartialEq, Debug, Serialize, strum::Display, Clone, Eq, Deserialize)]
-#[repr(u8)]
-pub enum Role {
-    #[strum(serialize = "S")]
-    Server,
-    #[strum(serialize = "C")]
-    Client,
-}
 
-#[derive(
-Debug, Clone, Default , Copy, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
-)]
-pub enum BucketVisibility {
-    /// Anyone can see the bucket
-    Public,
-    /// Only author and invited users can see the bucket, Bucket will be made private-shared if private bucket is shared.
-    PrivateShared,
-    /// Only author.
-    #[default]
-    Private,
-}
 
-// All the available addons/features a bucket has active.
-bitflags::bitflags! {
-    #[derive(Debug,Copy, Clone, Eq,PartialEq)]
-    pub struct BucketFeaturesFlags: u32 {
-        const IS_SEARCHABLE         = 0b00000001;
-        const IS_PASSWORD_PROTECTED = 0b00000010;
-        const IS_SHARABLE           = 0b00000100;
-        const IS_SEARCH_INDEXED     = 0b00001000;
-    }
-}
+
+
+
 
 #[derive(
 Debug, Clone, Default, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
@@ -166,37 +152,6 @@ bitflags::bitflags! {
     }
 }
 
-// BucketGuid is a combination between user_id and bucket_id.
-// Max character length of 63 for aws s3 bucket name https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct BucketGuid {
-    pub user_id: uuid::Uuid,
-    pub bucket_id: uuid::Uuid,
-}
-
-// Implements to string trait also.
-impl fmt::Display for BucketGuid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let res = write!(
-            f,
-            "{}{}",
-            self.user_id.as_simple(),
-            &self.bucket_id.simple().to_string()[..31] // Remove last 32nd character
-        );
-        debug_assert!(
-            f.width().unwrap() <= 63, //Check if width() is correct usage.
-            "Bucket name is too long and will cause issue with S3-API."
-        );
-        res
-    }
-}
-
-impl BucketGuid {
-    pub fn new(user_id: uuid::Uuid, bucket_id: uuid::Uuid) -> Self {
-        Self { user_id, bucket_id }
-    }
-}
-
 
 
 #[cfg(test)]
@@ -214,9 +169,6 @@ mod tests {
     }
 
     mod bucket_region {
-        use crate::region::RegionCluster;
-use crate::region::BucketRegion;
-use super::*;
 
         //#[test]
         //fn test_bucket_region_parsing() {

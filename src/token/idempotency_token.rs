@@ -1,0 +1,1 @@
+pub struct IdempotencyToken(pub String);

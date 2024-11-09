@@ -1,0 +1,5 @@
+[toolchain]
+channel = "nightly-2024-07-01" # voprf library breaks on newer releases );
+components = ["miri", "rustfmt", "clippy", "cargo-watch"]
+targets = []
+profile = "default"

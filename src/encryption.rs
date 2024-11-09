@@ -13,7 +13,6 @@ use std::num::ParseIntError;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
-use crate::Role;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, strum::Display)]
 pub enum EncryptionAlgorithm {
@@ -21,11 +20,19 @@ pub enum EncryptionAlgorithm {
     AES256,
     ChaCha20Poly1305,
     XChaCha20Poly1305,
-    // Must start with 'Custom-' and then the name of the encryption. with a max length of 64 characters entirely.
+    // Must start with 'custom-' and then the name of the encryption. with a max length of 64 characters entirely.
     #[strum(to_string = "custom-{0}")]
     Custom(String),
 }
 
+#[derive(EnumString, PartialEq, Debug, Serialize, strum::Display, Clone, Eq, Deserialize)]
+#[repr(u8)]
+pub enum Role {
+    #[strum(serialize = "S")]
+    Server,
+    #[strum(serialize = "C")]
+    Client,
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BucketEncryptionScheme {
@@ -40,6 +47,39 @@ pub struct BucketEncryptionScheme {
     /// The encryption algorithm used to secure the data in the bucket.
     /// This is represented by the `EncryptionAlgorithm` enum.
     pub encryption: EncryptionAlgorithm,
+    /// Derive function used for the bucket.
+    /// Argon2iD is the most secure with PBKDF2 being less so but, docent require much memory.
+    pub kdf: KeyDeriveFunction,
+}
+
+
+pub struct Argon2IdParams {
+    pub iterations: u32,
+}
+
+impl Default for Argon2IdParams {
+    fn default() -> Self {
+        todo!()
+    }
+}
+
+pub struct PBKDF2Params {
+    pub iterations: u32,
+}
+
+impl Default for PBKDF2Params {
+    fn default() -> Self {
+        todo!()
+    }
+}
+
+#[derive(Display, Default, Clone, Debug, Eq, PartialEq)]
+pub enum KeyDeriveFunction {
+    /// Argon2Id the most secure KDF currently available.
+    #[default]
+    Argon2id,
+    /// Uses less memory than Argon2Id, consider if you want to use Argon2Id
+    PBKDF2
 }
 
 impl Display for BucketEncryptionScheme {
@@ -90,6 +130,7 @@ impl FromStr for BucketEncryptionScheme
             responsible: role,
             encryption: EncryptionAlgorithm::from_str(encryption.as_str()).unwrap(),
             version,
+            kdf: Default::default(),
         })
     }
 }
