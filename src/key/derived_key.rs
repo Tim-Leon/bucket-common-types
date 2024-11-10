@@ -14,6 +14,7 @@ pub type CryptoHashDerivedKeySha3_256 = Sha3_256CryptoHashDerivedKey<typenum::U3
 
 
 /// Represents a derived encryption key generated from a master key and nonce.
+#[derive(Clone, Debug)]
 pub struct Sha3_256CryptoHashDerivedKey<TKeyLength>
 where
     TKeyLength: ArrayLength<T>,

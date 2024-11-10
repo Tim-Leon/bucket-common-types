@@ -108,7 +108,7 @@ pub type ClusterId = u32;
 /// Used in the subdomain to be used by DNS to resolve the ip address of that specific cluster.
 /// BucketRegion field denoting the region.
 /// And ClusterId referring to a specific cluster in the region.
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, Eq)]
 pub struct RegionCluster {
     pub region: BucketRegion,
     pub cluster_id: ClusterId,

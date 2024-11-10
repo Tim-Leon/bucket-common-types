@@ -51,6 +51,9 @@ mime = "0.3.17"
 http = "1.1.0"
 tonic = "0.12.3"
 reqwest = "0.12.9"
+# Generate documentation for parsers.
+railroad = { version = "0.3.2" , features = ["resvg"]}
+urlencoding = { version = "2.1.3" , features = []}
 [dev-dependencies]
 serial_test = "3.0.0"
 criterion = { version = "0.5.1" } # Benchmark framework that is used to deterimne performance change, as in regresion or improvement.

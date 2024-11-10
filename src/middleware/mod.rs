@@ -1,12 +1,11 @@
 use std::fmt::Debug;
 use mime::Mime;
-use crate::authentication::AccessToken;
 use crate::Encoding;
+use crate::token::access_token::AccessToken;
+use crate::token::idempotency_token::IdempotencyToken;
 
 pub mod grpc_ext;
 pub mod http_ext;
-mod grpc_ext;
-mod http_ext;
 
 pub const AUTHORIZATION_VALUE_MAX_LENGTH: usize = 120;
 pub const CONTENT_TYPE_VALUE_MAX_LENGTH: usize = 12;

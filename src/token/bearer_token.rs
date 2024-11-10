@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use crate::authentication::BearerToken;
-
+use crate::token::jwt_token::JwtToken;
 
 #[derive(Clone, Debug, PartialEq)]
 #[derive(Zeroize)]

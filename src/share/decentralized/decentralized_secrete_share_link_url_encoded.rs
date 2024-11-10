@@ -1,5 +1,4 @@
-
-
+use core::slice::SlicePattern;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
@@ -11,10 +10,12 @@ use digest::OutputSizeUser;
 use ed25519_compact::Noise;
 use sha3::{Digest, Sha3_224};
 use time::OffsetDateTime;
-
-use crate::encryption::EncryptionAlgorithm;
+use crate::bucket::bucket_guid::BucketGuid;
+use crate::bucket::bucket_permission::BucketPermissionFlags;
+use crate::encryption::{BucketEncryptionScheme, EncryptionAlgorithm};
+use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
 use crate::region::RegionCluster;
-use crate::util::{DOMAIN_NAME, SECRET_SHARE_PATH_URL};
+use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 
 // https:eu-central-1.1.bucketdrive.co/share/0#user_id#bucket_id#bucket_encryption#bucket_key#permission#expires#signature
 
@@ -23,21 +24,20 @@ use crate::util::{DOMAIN_NAME, SECRET_SHARE_PATH_URL};
 // that SecretShareLink encode the key for decrypting the bucket in an url such as Aes256Gcm.
 // And that SecretShareLink use
 #[derive(Debug,  Clone)]
-pub struct SecretShareLinkUrlEncoded {
+pub struct DecentralizedSecretShareLink {
     pub version: u8,
     pub region_cluster: RegionCluster,
-    pub user_id: uuid::Uuid,
-    pub bucket_id: uuid::Uuid,
+    pub bucket_guid: BucketGuid,
     // Depending on what encryption used, the bucket_key might be different.
     // Note that the encryption algorithm chosen should have built in integrity check such as AES256-GCM to be considered fully secure or need an external source of integrity check.
     // Only the official supported bucket encryption can be used on the website,
     // any encryption that fal under custom will only be supported by client
     // that has the implementation necessary.
-    pub bucket_encryption: EncryptionAlgorithm,
+    pub bucket_encryption: BucketEncryptionScheme,
     // Currently we limit the key size to at most 4096-bit encryption keys.
     pub bucket_key: CryptoHashDerivedKeySha3_256,
     /// The permission associated with the url.
-    pub permission: BucketSharePermissionFlags,
+    pub permission: BucketPermissionFlags,
     /// For how long the signature is going to be valid
     pub expires: OffsetDateTime,
     pub signature: ed25519_compact::Signature, // The signature is stored in the link. This makes sure that the link is not tampered with.
@@ -56,7 +56,7 @@ fn hash_secret_share_link<D: Digest + OutputSizeUser>(
     user_id: uuid::Uuid,
     bucket_id: uuid::Uuid,
     bucket_key: aes_gcm::Key<Aes256Gcm>,
-    permission: BucketSharePermissionFlags,
+    permission: BucketPermissionFlags,
     expires: OffsetDateTime,
     output: &mut GenericArray<u8, <D as OutputSizeUser>::OutputSize>, //[u8;64],
 ) {
@@ -70,18 +70,17 @@ fn hash_secret_share_link<D: Digest + OutputSizeUser>(
     hasher.finalize_into(output)
 }
 
-impl Display for SecretShareLinkUrlEncoded {
+impl Display for DecentralizedSecretShareLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}.{}{}/{}/{}#{}#{}#{}#{}",
+            "{}{}.{}/{}/{}#{}#{}#{}#{}",
             "https://",
             self.region_cluster.to_string(),
             DOMAIN_URL,
             SECRET_SHARE_PATH_URL,
-            self.user_id,
-            self.bucket_id,
-            general_purpose::URL_SAFE_NO_PAD.encode(self.bucket_key.as_slice()),
+            general_purpose::URL_SAFE_NO_PAD.encode(self.bucket_guid.as_slice()),
+            self.bucket_key.as_slice(),
             general_purpose::URL_SAFE_NO_PAD.encode(self.permission.bits().to_be_bytes()),
             general_purpose::URL_SAFE_NO_PAD
                 .encode(bincode::serialize(&self.expires).unwrap().as_slice()),
@@ -102,7 +101,7 @@ pub enum SecretShareLinkParsingError {
     Utf8Error(#[from] std::string::FromUtf8Error),
 }
 
-impl TryFrom<url::Url> for SecretShareLinkUrlEncoded {
+impl TryFrom<url::Url> for DecentralizedSecretShareLink {
     type Error = SecretShareLinkParsingError;
 
     fn try_from(value: url::Url) -> Result<Self, Self::Error> {
@@ -133,7 +132,7 @@ impl TryFrom<url::Url> for SecretShareLinkUrlEncoded {
                 .unwrap()
                 .as_slice(),
         );
-        let permission = BucketSharePermissionFlags::from_bits(u32::from_be_bytes(
+        let permission = BucketPermissionFlags::from_bits(u32::from_be_bytes(
             base64::engine::general_purpose::URL_SAFE_NO_PAD
                 .decode(fragments[2].as_bytes())
                 .unwrap()
@@ -181,24 +180,24 @@ pub enum SecretShareLinkVerifySignatureError {
     InvalidSignature(#[from] ed25519_compact::Error),
 }
 
-impl SecretShareLinkUrlEncoded {
+impl DecentralizedSecretShareLink {
 
     pub fn compute_hash<D: Digest + OutputSizeUser>(
         region_cluster: RegionCluster,
-        user_id: uuid::Uuid,
-        bucket_id: uuid::Uuid,
+        bucket_guid: BucketGuid,
         bucket_key: aes_gcm::Key<Aes256Gcm>,
-        permission: BucketSharePermissionFlags,
+        permission: BucketPermissionFlags,
         expires: OffsetDateTime,
     ) -> GenericArray<u8, <D as OutputSizeUser>::OutputSize> {
         let mut hasher = D::new();
+        let mut output = GenericArray::default();
         hasher.update(region_cluster.to_string());
-        hasher.update(user_id.as_bytes());
-        hasher.update(bucket_id.as_bytes());
+        hasher.update(bucket_guid.as_slice());
         hasher.update(bucket_key.as_slice());
         hasher.update(permission.bits().to_be_bytes());
         hasher.update(bincode::serialize(&expires).unwrap());
-        hasher.finalize_into(output)
+        hasher.finalize_into(&mut output);
+        output
     }
     // Verify the signature against the signature file with special identifier.
     pub fn verify_signature(
@@ -208,8 +207,7 @@ impl SecretShareLinkUrlEncoded {
         let mut hash_output = GenericArray::default(); //[0; 64];
         self.compute_hash::<Sha3_224>(
             self.region_cluster,
-            self.user_id,
-            self.bucket_id,
+            self.bucket_guid,
             self.bucket_key,
             self.permission,
             self.expires,
@@ -231,22 +229,18 @@ impl SecretShareLinkUrlEncoded {
 
     pub fn new(
         region_cluster: RegionCluster,
-        user_id: uuid::Uuid,
-        bucket_id: uuid::Uuid,
+        bucket_guid: BucketGuid,
         bucket_key: aes_gcm::Key<Aes256Gcm>,
-        permission: BucketSharePermissionFlags,
+        permission: BucketPermissionFlags,
         expires: OffsetDateTime,
         secret_key: &ed25519_compact::SecretKey,
     ) -> Self {
-        let mut hash_output = GenericArray::default();
-        self.compute_hash::<Sha3_224>(
+        let hash_output = Self::compute_hash::<Sha3_224>(
             region_cluster,
-            user_id,
-            bucket_id,
+            bucket_guid,
             bucket_key,
             permission,
             expires,
-            &mut hash_output,
         );
 
         let noise = Noise::from_slice(bucket_id.as_bytes().as_slice()).unwrap(); // Do we even need it?
@@ -271,8 +265,7 @@ impl SecretShareLinkUrlEncoded {
         let mut hash_output = GenericArray::default();
         let hash_output = self.compute_hash::<Sha3_224>(
             self.region_cluster,
-            self.user_id,
-            self.bucket_id,
+            self.bucket_guid,
             self.bucket_key,
             self.permission,
             self.expires,
@@ -291,7 +284,7 @@ pub enum SecretShareLinkFormatError {
     SecretShareLinkFormatError(#[from] SecretShareLinkParsingError),
 }
 
-impl TryInto<url::Url> for SecretShareLinkUrlEncoded {
+impl TryInto<url::Url> for DecentralizedSecretShareLink {
     type Error = SecretShareLinkFormatError;
 
     fn try_into(self) -> Result<url::Url, Self::Error> {
@@ -382,7 +375,7 @@ mod tests {
 
         let bucket_key_bytes = rand::random::<[u8; 32]>();
         let bucket_key = aes_gcm::Key::<Aes256Gcm>::from_slice(&bucket_key_bytes);
-        let permission = BucketSharePermissionFlags::VIEW; //You need to replace ValorA
+        let permission = BucketPermissionFlags::VIEW; //You need to replace ValorA
         let expires = OffsetDateTime::now_utc();
         let region_cluster = RegionCluster::from_str("").unwrap();
         let link = SecretShareLink::new(region_cluster,

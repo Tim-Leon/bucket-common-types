@@ -22,7 +22,7 @@ impl TryFrom<prost_types::Timestamp> for UnixTimestamp {
         Ok(UnixTimestamp(result))
     }
 }
-// TODO: Switch to FROM instead? Infalliable try_from()...
+// TODO: Switch to FROM instead? Infallible try_from()...
 impl TryInto<prost_types::Timestamp> for UnixTimestamp {
     type Error = TimestampError;
 

@@ -8,13 +8,14 @@ use crate::authentication::token::ApiToken;
 use crate::client::middleware::metadata::{IdempotencyToken, RequestBuilderAuthorizationMetadataExt, RequestBuilderContentTypeMetadataExt, RequestBuilderIdempotencyTokenMetadataSetterExt, ResponseRatelimitHeaderExtractorExt, ResponseUserAgentHeaderExtractorExt};
 use crate::client::middleware::ratelimit::RatelimitMetadata;
 use crate::client::middleware::user_agent::UserAgent;
-
+use crate::token::access_token::AccessToken;
+use crate::token::idempotency_token::IdempotencyToken;
 use super::{RequestBuilderAuthorizationMetadataSetterExt, RequestBuilderContentTypeMetadataSetterExt};
 
 
 impl<T> RequestBuilderAuthorizationMetadataExt for Request<T> {
     type Error = Infallible;
-    fn with_authorization_metadata(mut self, api_token: &ApiToken) -> Result< Self, Self::Error>
+    fn with_authorization_metadata(mut self, api_token: &AccessToken) -> Result< Self, Self::Error>
     where
         Self: Sized
     {
@@ -31,7 +32,7 @@ impl<T> RequestBuilderAuthorizationMetadataExt for Request<T> {
 
 impl <T> RequestBuilderAuthorizationMetadataSetterExt for Request<T> {
     type Error = Infallible;
-    fn set_authorization_metadata(&mut self, api_token: &ApiToken) -> Result<(), Self::Error> {
+    fn set_authorization_metadata(&mut self, api_token: &AccessToken) -> Result<(), Self::Error> {
         let meta = self.metadata_mut();
         let meta_data = MetadataValue::<Ascii>::from_str(api_token.to_bearer_token().as_str()).unwrap();
         meta.append(Self::AUTHORIZATION_KEY, meta_data);

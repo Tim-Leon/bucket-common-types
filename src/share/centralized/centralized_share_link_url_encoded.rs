@@ -1,37 +1,34 @@
-use base64::{engine::general_purpose, DecodeError, Engine};
-use serde::{Deserialize, Serialize};
+
 use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
-use rand::{CryptoRng, RngCore};
+use base64::{DecodeError, Engine};
+use base64::engine::general_purpose;
+use crate::region::RegionCluster;
+use crate::share::centralized::centralized_share_link_token::CentralizedShareLinkToken;
+use crate::share::versioning::UrlEncodedShareLinksVersioning;
 use crate::util::{DOMAIN_URL, SHARE_PATH_URL};
 
 
-/*
-*  Bucket share link
-*  bucketdrive.co/api/v1/share/user_id/bucket_id#permissions#expires#signature
-*/
-pub struct ShareLinkToken {
-    pub token: [u8; 32],
+pub struct CentralizedShareLinkUrlEncoded {
+    pub subdomain : Option<String>,
+    pub domain: String,
+    pub version: UrlEncodedShareLinksVersioning,
+
 }
 
-impl Display for ShareLinkToken {
+impl Display for CentralizedShareLinkToken {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}/share/{}",
+            "{}{}/{}/share/{}",
             DOMAIN_URL,
             SHARE_PATH_URL,
+            self.version,
             general_purpose::URL_SAFE_NO_PAD.encode(self.token)
         )
     }
 }
 
-impl TryInto<url::Url> for ShareLinkToken {
-    type Error = url::ParseError;
-    fn try_into(self) -> Result<url::Url, Self::Error> {
-        url::Url::parse(self.to_string().as_str())
-    }
-}
 #[derive(thiserror::Error, Debug)]
 pub enum ShareLinkParsingError {
     #[error("Failed to decode token")]
@@ -42,10 +39,8 @@ pub enum ShareLinkParsingError {
     InvalidTokenLength(Vec<u8>),
 }
 
-// Compress Share Link???
-//TODO: FIX THIS
-// Very strict parser.
-impl TryFrom<url::Url> for ShareLinkToken {
+
+impl TryFrom<url::Url> for CentralizedShareLinkToken {
     type Error = ShareLinkParsingError;
     fn try_from(url: url::Url) -> Result<Self, Self::Error> {
         let path = url.path();
@@ -60,25 +55,7 @@ impl TryFrom<url::Url> for ShareLinkToken {
             token: token
                 .try_into()
                 .map_err(ShareLinkParsingError::InvalidTokenLength)?,
+            region: self.region,
         })
     }
 }
-
-impl ShareLinkToken {
-    pub fn new(token: &[u8; 32]) -> ShareLinkToken {
-        Self {
-            token: *token,
-        }
-    }
-    pub fn get_token(&self) -> [u8; 32] {
-        self.token
-    }
-    pub fn generate<TCryptoRng: RngCore + CryptoRng>(cspring :&mut TCryptoRng) -> Self {
-        let mut token = [0u8; 32];
-        cspring.fill_bytes(&mut token);
-        Self {
-            token,
-        }
-    }
-}
-

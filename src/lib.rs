@@ -2,6 +2,7 @@
 #![feature(slice_split_once)]
 #![feature(associated_type_defaults)]
 extern crate core;
+extern crate core;
 
 use core::slice::SlicePattern;
 use serde::de::Expected;
@@ -28,14 +29,12 @@ pub mod region;
 pub mod middleware;
 #[cfg(feature = "key")]
 pub mod key;
-
 pub mod storage_engine;
 pub mod bucket;
 pub mod share;
 pub mod authentication;
 mod user_settings;
-mod token;
-mod token;
+pub mod token;
 
 #[derive(Clone, Default, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum WebhookSignatureScheme {
@@ -69,7 +68,6 @@ pub enum VideoCodec {
     H264,
 }
 
-enum BucketPermission {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 enum BucketAvailabilityStatus {
@@ -156,6 +154,7 @@ bitflags::bitflags! {
 
 #[cfg(test)]
 mod tests {
+    use crate::bucket::bucket_guid::BucketGuid;
     use super::*;
 
     #[test]
