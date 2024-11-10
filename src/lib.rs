@@ -3,6 +3,9 @@
 #![feature(associated_type_defaults)]
 extern crate core;
 extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
 
 use core::slice::SlicePattern;
 use serde::de::Expected;

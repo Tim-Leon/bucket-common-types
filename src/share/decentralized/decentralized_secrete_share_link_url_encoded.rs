@@ -26,7 +26,7 @@ use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 #[derive(Debug,  Clone)]
 pub struct DecentralizedSecretShareLink {
     pub version: u8,
-    pub region_cluster: RegionCluster,
+    pub region_cluster: Option<RegionCluster>,
     pub bucket_guid: BucketGuid,
     // Depending on what encryption used, the bucket_key might be different.
     // Note that the encryption algorithm chosen should have built in integrity check such as AES256-GCM to be considered fully secure or need an external source of integrity check.
@@ -182,23 +182,7 @@ pub enum SecretShareLinkVerifySignatureError {
 
 impl DecentralizedSecretShareLink {
 
-    pub fn compute_hash<D: Digest + OutputSizeUser>(
-        region_cluster: RegionCluster,
-        bucket_guid: BucketGuid,
-        bucket_key: aes_gcm::Key<Aes256Gcm>,
-        permission: BucketPermissionFlags,
-        expires: OffsetDateTime,
-    ) -> GenericArray<u8, <D as OutputSizeUser>::OutputSize> {
-        let mut hasher = D::new();
-        let mut output = GenericArray::default();
-        hasher.update(region_cluster.to_string());
-        hasher.update(bucket_guid.as_slice());
-        hasher.update(bucket_key.as_slice());
-        hasher.update(permission.bits().to_be_bytes());
-        hasher.update(bincode::serialize(&expires).unwrap());
-        hasher.finalize_into(&mut output);
-        output
-    }
+
     // Verify the signature against the signature file with special identifier.
     pub fn verify_signature(
         &self,

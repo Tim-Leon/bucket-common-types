@@ -1,3 +1,6 @@
+use core::slice::SlicePattern;
+use digest::generic_array::GenericArray;
+use digest::{Digest, OutputSizeUser};
 use time::OffsetDateTime;
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
@@ -9,7 +12,7 @@ use crate::share::versioning::UrlEncodedShareLinksVersioning;
 pub struct DecentralizedShareLinkUrlEncoded {
     pub version: UrlEncodedShareLinksVersioning,
 
-    pub region_cluster: RegionCluster,
+    pub region: Option<RegionCluster>,
 
     pub bucket_guid: BucketGuid,
     /// The permission associated with the url.
@@ -22,11 +25,12 @@ pub struct DecentralizedShareLinkUrlEncoded {
 
 impl DecentralizedShareLinkUrlEncoded {
     const VERSION: UrlEncodedShareLinksVersioning = UrlEncodedShareLinksVersioning::V1;
-    pub fn new(bucket_guid: BucketGuid, expires: OffsetDateTime, permission: BucketPermissionFlags ,secret_signing_key: &ed25519_compact::SecretKey) -> Self {
+    pub fn new(region: Option<RegionCluster>,bucket_guid: BucketGuid, expires: OffsetDateTime, permission: BucketPermissionFlags ,secret_signing_key: &ed25519_compact::SecretKey) -> Self {
         let hash = Self::compute_hash(bucket_guid, permission, expires);
         let signature = secret_signing_key.sign(hash);
         Self {
            version: Self::VERSION,
+            region: region,
             bucket_guid,
             expires,
             permission,
@@ -34,17 +38,6 @@ impl DecentralizedShareLinkUrlEncoded {
         }
     }
 
-    pub fn compute_hash<THasher: Digest + OutputSizeUser>(
-        bucket_guid: BucketGuid,
-        permission: BucketSharePermissionFlags,
-        expires: OffsetDateTime,
-    ) -> GenericArray<u8, <THasher as OutputSizeUser>::OutputSize> {
-        let output = GenericArray::default();
-        let mut hasher = THasher::new();
-        hasher.update(bucket_guid.as_bytes());
-        hasher.update(permission.bits().to_be_bytes());
-        hasher.update(bincode::serialize(&expires).unwrap());
-        hasher.finalize_into(output)
-    }
+
 
 }

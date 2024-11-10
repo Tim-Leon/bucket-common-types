@@ -11,7 +11,9 @@ pub trait GenerateSyntaxDiagram {
 
 
 /*
-This module defines all of the different share links that can be created.
+This module defines all the different share links that can be created.
 
-Centralized based sharing uses a token based approach where the user request the server to create a share link. Note that the 
+Centralized based sharing uses a token based approach where the user request the server to create a share link. Note that the
+
+The region is allways optional, if the user chose not to use it, a request from the client will have to be used in order to get where the bucket is stored, leading to additional indirection.
 */
