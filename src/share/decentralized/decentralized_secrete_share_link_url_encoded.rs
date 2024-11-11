@@ -170,6 +170,7 @@ impl TryFrom<url::Url> for DecentralizedSecretShareLink {
             permission,
             expires,
             signature,
+            bucket_guid: BucketGuid {},
         })
     }
 }

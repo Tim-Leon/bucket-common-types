@@ -9,7 +9,11 @@ pub struct CentralizedSecretShareLinkToken {
     pub region: Option<RegionCluster>,
 }
 
-pub enum
+#[derive(thiserror::Error, Debug)]
+pub enum CentralizedSecreteShareLinkTokenGeneratorError {
+    #[error("Centralized shareable feature is not enabled for this bucket")]
+    BucketFeatureCentralizedShareableNotEnabled,
+}
 
 impl CentralizedSecretShareLinkToken {
     pub fn new(token: [u8; 32], region: Option<RegionCluster>) -> Self {
@@ -19,29 +23,17 @@ impl CentralizedSecretShareLinkToken {
         }
     }
 
-    pub fn generate<TCSPRNG: RngCore + CryptoRng>(cspring :&mut TCSPRNG, region: Option<RegionCluster>, bucket_features_flags: &BucketFeaturesFlags) -> Self {
+    pub fn generate<TCSPRNG: RngCore + CryptoRng>(cspring :&mut TCSPRNG, region: Option<RegionCluster>, bucket_features_flags: &BucketFeaturesFlags) -> Result<Self, CentralizedSecreteShareLinkTokenGeneratorError> {
         if !bucket_features_flags.contains(BucketFeaturesFlags::IS_CENTRALIZED_SHARABLE) {
-
+            return Err(CentralizedSecreteShareLinkTokenGeneratorError::BucketFeatureCentralizedShareableNotEnabled)
         }
         let mut token = [0u8; 32];
         cspring.fill_bytes(&mut token);
-        Self {
+        Ok(Self {
             token,
             region,
-        }
+        })
     }
 }
 
-pub struct CentralizedUrlEncodedSecreteShareLinkToken {
-    pub url: Url,
-}
-
-
-impl TryInto<CentralizedUrlEncodedSecreteShareLinkToken> for CentralizedSecretShareLinkToken {
-    type Error = ();
-
-    fn try_into(self) -> Result<CentralizedUrlEncodedSecreteShareLinkToken, Self::Error> {
-        todo!()
-    }
-}
 
