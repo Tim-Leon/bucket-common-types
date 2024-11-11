@@ -5,16 +5,18 @@ use base64::{DecodeError, Engine};
 use base64::engine::general_purpose;
 use http::uri::Scheme;
 use crate::region::RegionCluster;
-use crate::share::centralized::centralized_secrete_share_link_token_url_encoded::{FullyQualifiedDomainName, PathVersion};
+use crate::share::centralized::centralized_secrete_share_link::PathWithToken;
+use crate::share::centralized::centralized_secrete_share_link_token::{FullyQualifiedDomainName, PathWithToken};
 use crate::share::centralized::centralized_share_link_token::CentralizedShareLinkToken;
-use crate::share::versioning::UrlEncodedShareLinksVersioning;
+use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
+use crate::share::versioning::SharingApiPath;
 use crate::util::{DOMAIN_URL, SHARE_PATH_URL};
 
 
 pub struct CentralizedShareLinkUrlEncoded {
     pub scheme: Scheme,
     pub fqdn: FullyQualifiedDomainName,
-    pub path: PathVersion,
+    pub path: PathWithToken,
 
 }
 

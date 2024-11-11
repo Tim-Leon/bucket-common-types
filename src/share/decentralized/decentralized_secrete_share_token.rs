@@ -12,9 +12,10 @@ use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::key::CryptoHashDerivedKeyType;
 use crate::region::RegionCluster;
 use crate::share::decentralized::decentralized_secrete_share_link_url_encoded::DecentralizedSecretShareLink;
+use crate::share::share_link_token::SecreteShareLinkToken;
 
 pub struct DecentralizedSecretShareToken {
-    pub token: [u8;32],
+    pub token: SecreteShareLinkToken,
     pub region: Option<RegionCluster>,
 }
 

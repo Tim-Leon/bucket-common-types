@@ -1,11 +1,11 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use crate::share::decentralized::decentralized_secrete_share_link_url_encoded::DecentralizedSecretShareLink;
-use crate::share::decentralized::decentralized_share_link_url_encoded::DecentralizedShareLinkUrlEncoded;
+use crate::share::decentralized::decentralized_share_link::DecentralizedShareLink;
 
 // Just an enum used to store share link.
 pub enum ExclusiveShareLinkUrlEncoded {
-    ShareLink(DecentralizedShareLinkUrlEncoded),
+    ShareLink(DecentralizedShareLink),
     SecretShareLink(DecentralizedSecretShareLink),
 }
 
@@ -15,10 +15,10 @@ pub enum ExclusiveTokenShareLink {
 }
 
 pub enum ShareLink {
-    UrlEncodedShareLink(DecentralizedShareLinkUrlEncoded),
-    UrlEncodedSecreteShareLink(DecentralizedShareLinkUrlEncoded),
-    UrlTokenEncodedShareLink(DecentralizedShareLinkUrlEncoded),
-    UrlTokenEncodedSecreteShareLink(DecentralizedShareLinkUrlEncoded),
+    UrlEncodedShareLink(DecentralizedShareLink),
+    UrlEncodedSecreteShareLink(DecentralizedShareLink),
+    UrlTokenEncodedShareLink(DecentralizedShareLink),
+    UrlTokenEncodedSecreteShareLink(DecentralizedShareLink),
 }
 
 
@@ -37,7 +37,7 @@ impl TryFrom<url::Url> for ExclusiveShareLinkUrlEncoded {
     type Error = ExclusiveShareLinkParsingError;
 
     fn try_from(value: url::Url) -> Result<Self, Self::Error> {
-        match DecentralizedShareLinkUrlEncoded::try_from(value.clone()) {
+        match DecentralizedShareLink::try_from(value.clone()) {
             Ok(share_link) => {
                 return Ok(ExclusiveShareLinkUrlEncoded::ShareLink(share_link));
             }

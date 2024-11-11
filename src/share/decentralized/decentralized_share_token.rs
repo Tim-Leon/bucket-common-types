@@ -7,9 +7,10 @@ use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::region::RegionCluster;
 use crate::share::decentralized::decentralized_secrete_share_link_url_encoded::DecentralizedSecretShareLink;
 use crate::share::decentralized::decentralized_secrete_share_token::DecentralizedSecretShareToken;
+use crate::share::share_link_token::ShareLinkToken;
 
 pub struct DecentralizedShareToken {
-    pub token: [u8; 32],
+    pub token: ShareLinkToken,
     pub region: Option<RegionCluster>,
 }
 
