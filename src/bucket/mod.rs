@@ -3,3 +3,4 @@ pub mod bucket_path;
 pub mod bucket_visibility;
 pub mod bucket_features;
 pub mod bucket_permission;
+mod bucket_retention_policy;

@@ -15,6 +15,7 @@ use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::encryption::{BucketEncryptionScheme, EncryptionAlgorithm};
 use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
 use crate::region::RegionCluster;
+use crate::share::versioning::SharingApiPath;
 use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 
 // https:eu-central-1.1.bucketdrive.co/share/0#user_id#bucket_id#bucket_encryption#bucket_key#permission#expires#signature
@@ -25,7 +26,7 @@ use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 // And that SecretShareLink use
 #[derive(Debug,  Clone)]
 pub struct DecentralizedSecretShareLink {
-    pub version: u8,
+    pub version: SharingApiPath,
     pub region_cluster: Option<RegionCluster>,
     pub bucket_guid: BucketGuid,
     // Depending on what encryption used, the bucket_key might be different.
@@ -202,15 +203,6 @@ impl DecentralizedSecretShareLink {
         Ok(public_signing_key.verify(hash_output, &self.signature)?)
     }
 
-    /// This parser is used when the encryption key is present.
-    pub fn token_parse_with_key(s:&str) -> Result<Self>
-    {
-
-    }
-    /// This parser is used when there is no encryption key
-    pub fn token_parse(s: &str) -> Result<Self> {
-
-    }
 
     pub fn new(
         region_cluster: RegionCluster,

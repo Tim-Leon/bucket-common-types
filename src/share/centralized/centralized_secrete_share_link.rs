@@ -1,89 +1,22 @@
 use crate::region::RegionCluster;
 use crate::share::centralized::centralized_secrete_share_link_token::CentralizedSecretShareLinkToken;
+use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
+use crate::share::token_path::TokenPath;
 use crate::share::versioning::SharingApiPath;
-use crate::util::DOMAIN_URL;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use crate::util::{DOMAIN_NAME, DOMAIN_URL};
 use base64::Engine;
 use http::uri::Scheme;
 use http::Uri;
 use std::convert::Infallible;
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 use std::io::BufRead;
 use std::str::FromStr;
-use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
-use crate::share::share_link_token::ShareLinkToken;
-
-/// path/version/token, serialize and deserializer.
-pub struct PathWithToken {
-    pub version: SharingApiPath,
-    pub token: ShareLinkToken,
-}
-
-impl Display for PathWithToken {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let encoded_token = self.token.to_base64_url_safe();
-        write!(f, "{}/{}",self.version.to_string(), encoded_token)
-    }
-}
-
-
-
-
-// Define a custom error type for PathVersion parsing
-#[derive(Debug, thiserror::Error)]
-pub enum PathVersionParseError {
-    #[error("InvalidFormat")]
-    InvalidFormat,
-    #[error(transparent)]
-    InvalidVersionFormat,
-    #[error(transparent)]
-    MissingToken,
-    #[error(transparent)]
-    InvalidSharePrefix,
-    #[error(transparent)]
-    InvalidTokenFormat(#[from] ),
-}
-
-impl FromStr for PathWithToken {
-    type Err = PathVersionParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // Ensure the string contains the "/share/" prefix
-        if !s.starts_with(SharingApiPath::V1.to_string()) {
-            return Err(PathVersionParseError::InvalidSharePrefix);
-        }
-
-        // Find the start of the path after "/share/"
-        let path = &s[share_prefix.len()..];
-
-        // Split by "/" to get version and token
-        let parts: Vec<&str> = path.split('/').collect();
-
-        // We expect exactly 2 parts: version and token
-        if parts.len() != 2 {
-            return Err(PathVersionParseError::InvalidFormat); // Expect exactly 2 parts
-        }
-
-        // Parse the version
-        let version = SharingApiPath::from_str(parts[0])
-            .map_err(|_| PathVersionParseError::InvalidVersionFormat)?;
-
-        // Ensure the token is present
-        let token = URL_SAFE_NO_PAD.decode(parts[1]).unwrap();
-        if token.is_empty() {
-            return Err(PathVersionParseError::MissingToken);
-        }
-        // Return the successfully parsed PathVersion
-        Ok(PathWithToken { version, token: token.as_slice().try_into().unwrap() })
-    }
-}
 
 /// Would use the URL create to store the data but the URL crate does not have a Builder Pattern only parser, very sad.
 pub struct CentralizedSecreteShareLink {
     pub scheme: Scheme,
     pub fqdn: FullyQualifiedDomainName,
-    pub path: PathWithToken,
+    pub path: TokenPath,
 }
 
 
@@ -93,14 +26,20 @@ impl TryFrom<CentralizedSecretShareLinkToken> for CentralizedSecreteShareLink {
     fn try_from(value: CentralizedSecretShareLinkToken) -> Result<Self, Self::Error> {
 
         // Version and token encoding
-        let path = PathWithToken {
+        let path = TokenPath {
             version: SharingApiPath::V1,
             token: value.token,
         };
-        
+
+        let subdomain = match value.region {
+            None => { None }
+            Some(region) => { Some( Box::from( region.to_string().as_str())) }
+        };
+
         let fqdn = FullyQualifiedDomainName {
-            subdomain: value.region.map(|x| x.region.to_string()),
-            domain: DOMAIN_URL.to_string(),
+            subdomain,
+            domain: Box::from(DOMAIN_NAME),
+            top_level_domain: Box::from(".co"),
         };
 
         // Return the constructed struct
@@ -160,7 +99,7 @@ impl TryFrom<Uri> for CentralizedSecreteShareLink {
         };
 
         // Handle path
-        let path = PathWithToken::from_str(value.path())
+        let path = TokenPath::from_str(value.path())
             .map_err(|_| CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidPathFormat)?;
 
         // Construct and return the struct

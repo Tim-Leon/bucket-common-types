@@ -1,40 +1,42 @@
-
-use std::convert::Infallible;
-use std::fmt::{Display, Formatter};
-use base64::{DecodeError, Engine};
-use base64::engine::general_purpose;
-use http::uri::Scheme;
-use crate::region::RegionCluster;
-use crate::share::centralized::centralized_secrete_share_link::PathWithToken;
-use crate::share::centralized::centralized_secrete_share_link_token::{FullyQualifiedDomainName, PathWithToken};
-use crate::share::centralized::centralized_share_link_token::CentralizedShareLinkToken;
+use crate::share::centralized::centralized_secrete_share_link::TokenPath;
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
+use crate::share::share_link_token::ShareLinkToken;
 use crate::share::versioning::SharingApiPath;
-use crate::util::{DOMAIN_URL, SHARE_PATH_URL};
+use base64::{DecodeError, Engine};
+use http::uri::Scheme;
+use http::Uri;
+use std::convert::Infallible;
+use std::fmt::Display;
+use std::str::FromStr;
 
-
-pub struct CentralizedShareLinkUrlEncoded {
+pub struct CentralizedShareLink {
     pub scheme: Scheme,
     pub fqdn: FullyQualifiedDomainName,
-    pub path: PathWithToken,
+    pub path: TokenPath,
 
 }
 
-impl Display for CentralizedShareLinkToken {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{}/{}/share/{}",
-            DOMAIN_URL,
-            SHARE_PATH_URL,
-            self.version,
-            general_purpose::URL_SAFE_NO_PAD.encode(self.token)
-        )
+#[derive(thiserror::Error, Debug)]
+pub enum CentralizedShareLinkUriEncodingError {
+    #[error(transparent)]
+    FailedToParse(#[from] http::Error),
+}
+impl TryInto<Uri> for CentralizedShareLink {
+    type Error = CentralizedShareLinkUriEncodingError;
+
+    fn try_into(self) -> Result<Uri, Self::Error> {
+        // Create URI, handling errors with `?`
+        let uri = Uri::builder()
+            .scheme(Scheme::HTTPS)
+            .authority(&self.fqdn)
+            .path_and_query(self.path.to_string())
+            .build()?;
+        Ok(uri)
     }
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum ShareLinkParsingError {
+pub enum ShareLinkUrlParsingError {
     #[error("Failed to decode token")]
     DecodeError(#[from] DecodeError),
     #[error("Parse to string error")]
@@ -44,22 +46,30 @@ pub enum ShareLinkParsingError {
 }
 
 
-impl TryFrom<url::Url> for CentralizedShareLinkToken {
-    type Error = ShareLinkParsingError;
+impl TryFrom<url::Url> for CentralizedShareLink {
+    type Error = ShareLinkUrlParsingError;
     fn try_from(url: url::Url) -> Result<Self, Self::Error> {
         let path = url.path();
-        let parts = path.split('/').take(1).collect::<Vec<&str>>(); // First element should be empty.
-        let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(
-            parts[1]
-                .parse::<String>()
-                .map_err(ShareLinkParsingError::ParseToString)?,
-        )?;
+        let parts: Vec<&str> = path.split('/').collect();
+
+        // Validate path structure and length
+        if parts.len() < 2 {
+            return Err(ShareLinkUrlParsingError::InvalidPathStructure);
+        }
+
+        // Parse token from the path
+        let token = ShareLinkToken::from_base64_url_safe(parts[1])?;
+
+        // Parse FQDN from host string, handling possible errors
+        let fqdn = FullyQualifiedDomainName::from_str(url.host_str().unwrap_or("")).map_err(|_| ShareLinkUrlParsingError::InvalidPathStructure)?;
 
         Ok(Self {
-            token: token
-                .try_into()
-                .map_err(ShareLinkParsingError::InvalidTokenLength)?,
-            region: self.region,
+            scheme: Scheme::HTTPS,
+            fqdn,
+            path: TokenPath {
+                version: SharingApiPath::V1,
+                token,
+            },
         })
     }
 }

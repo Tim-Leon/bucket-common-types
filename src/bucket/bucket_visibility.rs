@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+/// Access-control for bucket.
 #[derive(
     Debug, Clone, Default , Copy, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,
 )]

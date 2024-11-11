@@ -5,7 +5,8 @@ pub mod versioning;
 pub mod centralized;
 pub mod decentralized;
 pub mod fully_qualified_domain_name;
-mod share_link_token;
+pub mod share_link_token;
+pub mod token_path;
 
 pub trait GenerateSyntaxDiagram {
     fn generate_syntax_diagram(&self) -> String;
