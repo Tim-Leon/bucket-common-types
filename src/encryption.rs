@@ -73,7 +73,7 @@ impl Default for PBKDF2Params {
     }
 }
 
-#[derive(Display, Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Display, Default, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum KeyDeriveFunction {
     /// Argon2Id the most secure KDF currently available.
     #[default]

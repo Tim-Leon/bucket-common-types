@@ -1,4 +1,4 @@
-
+use serde::{Deserialize, Serialize};
 
 bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

@@ -29,7 +29,7 @@ impl SecreteShareLinkToken {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 pub struct ShareLinkToken(pub [u8; 32]);
 
 impl ShareLinkToken {

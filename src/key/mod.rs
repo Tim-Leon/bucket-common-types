@@ -6,16 +6,17 @@ use generic_array::typenum::IsGreaterOrEqual;
 use generic_array::{ArrayLength, GenericArray};
 use secrecy::ExposeSecret;
 use std::fmt::Debug;
+use zeroize::Zeroize;
 
 pub mod derived_key;
 pub mod master_key;
 pub mod nonce_generator;
-
+mod shard_master_key_generator;
 
 /// TODO: implement DER encoding.
 
-#[derive(Zeroize)]
 /// A secure wrapper around a generic array of secrets. TODO: disable memory swap for this memory in linux and windows.
+#[derive(Zeroize)]
 pub struct SecureGenericArray<T, TLength: ArrayLength>(pub Secret<GenericArray<T, TLength>>)
 where
     generic_array::GenericArray<T, TLength>: Zeroize;

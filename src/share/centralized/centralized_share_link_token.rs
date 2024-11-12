@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
 use rand::{CryptoRng, RngCore};
-use crate::bucket::bucket_features::BucketFeaturesFlags;
+use crate::bucket::bucket_feature_flags::BucketFeaturesFlags;
 use crate::region::RegionCluster;
 use crate::share::share_link_token::ShareLinkToken;
 use crate::util::{DOMAIN_URL, SHARE_PATH_URL};

@@ -1,4 +1,4 @@
-use digest::generic_array;
+use digest::{generic_array, typenum};
 use digest::generic_array::{ArrayLength, GenericArray};
 use generic_array::typenum::IsGreaterOrEqual;
 use secrecy::Zeroize;
@@ -18,7 +18,7 @@ TCryptoRng: rand::RngCore
 
 impl<TCryptoRng, TNonceLength> NonceGenerator<TCryptoRng, TNonceLength> for RandomSequential92BitNonceGenerator<TCryptoRng>
 where TCryptoRng: rand::CryptoRng,
-TCryptoRng: rand::RngCore, TNonceLength: generic_array::ArrayLength + IsGreaterOrEqual<generic_array::typenum::U8>
+TCryptoRng: rand::RngCore, TNonceLength: generic_array::ArrayLength<T> + IsGreaterOrEqual<generic_array::typenum::U8>
 {
     //TODO: Seed
     fn new<T>(csprng: TCryptoRng, seed:T) -> Self {

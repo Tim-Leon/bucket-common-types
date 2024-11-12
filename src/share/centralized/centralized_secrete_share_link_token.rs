@@ -1,4 +1,4 @@
-use crate::bucket::bucket_features::BucketFeaturesFlags;
+use crate::bucket::bucket_feature_flags::BucketFeaturesFlags;
 use crate::region::RegionCluster;
 use crate::share::share_link_token::SecreteShareLinkToken;
 

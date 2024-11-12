@@ -1,15 +1,10 @@
 use std::fmt::Display;
-use crate::authentication::BearerToken;
+use zeroize::Zeroize;
 use crate::token::jwt_token::JwtToken;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[derive(Zeroize)]
-pub struct BearerToken(String);
-impl BearerToken {
-    pub fn to_bearer_token(&self) -> String {
-        format!("Bearer {}", self.0)
-    }
-}
+pub struct BearerToken(pub String);
 impl TryFrom<&str> for BearerToken {
     type Error = ();
 
@@ -28,7 +23,7 @@ impl From<JwtToken> for BearerToken {
 
 impl Display for BearerToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "Bearer {}", self.0)
     }
 }
 

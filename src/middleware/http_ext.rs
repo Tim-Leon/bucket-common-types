@@ -2,12 +2,16 @@ use std::convert::Infallible;
 use std::io::Bytes;
 use http::HeaderName;
 use mime::Mime;
+use reqwest::RequestBuilder;
 use url::Url;
+use crate::Encoding;
+use crate::middleware::{RequestBuilderAuthorizationMetadataExt, RequestBuilderContentEncodingMetadataExt, RequestBuilderContentTypeMetadataExt};
+use crate::token::access_token::AccessToken;
 
 impl RequestBuilderAuthorizationMetadataExt for RequestBuilder {
     type Error = Infallible;
 
-    fn with_authorization_metadata(mut self, api_token: &ApiToken) -> Result<Self, Self::Error>
+    fn with_authorization_metadata(mut self, api_token: &AccessToken) -> Result<Self, Self::Error>
     where
         Self: Sized
     {
@@ -36,7 +40,7 @@ impl RequestBuilderContentTypeMetadataExt for RequestBuilder {
 impl RequestBuilderContentEncodingMetadataExt for RequestBuilder {
     type Error = Infallible;
 
-    fn with_content_encoding(mut self, content_encoding: &[bucket_common_types::Encoding]) -> Result<Self, Self::Error> {
+    fn with_content_encoding(mut self, content_encoding: &[Encoding]) -> Result<Self, Self::Error> {
         let encoding_str = content_encoding
             .iter()
             .map(|x| x.to_string())

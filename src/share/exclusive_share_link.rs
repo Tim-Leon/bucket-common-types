@@ -9,11 +9,6 @@ pub enum ExclusiveShareLinkUrlEncoded {
     SecretShareLink(DecentralizedSecretShareLink),
 }
 
-pub enum ExclusiveTokenShareLink {
-    TokenShareLink(TokenShareLink),
-    SecreteTokenShareLink(SecreteTokenShareLink),
-}
-
 pub enum ShareLink {
     UrlEncodedShareLink(DecentralizedShareLink),
     UrlEncodedSecreteShareLink(DecentralizedShareLink),

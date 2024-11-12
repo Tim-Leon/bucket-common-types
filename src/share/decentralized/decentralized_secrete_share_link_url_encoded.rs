@@ -1,5 +1,6 @@
 use core::slice::SlicePattern;
 use std::fmt::{Display, Formatter};
+use std::hash::Hash;
 use std::str::FromStr;
 
 use aes_gcm;
@@ -212,15 +213,15 @@ impl DecentralizedSecretShareLink {
         expires: OffsetDateTime,
         secret_key: &ed25519_compact::SecretKey,
     ) -> Self {
-        let hash_output = Self::compute_hash::<Sha3_224>(
+        let hash_output = Self::hash::<Sha3_224>(
             region_cluster,
-            bucket_guid,
+            bucket_guid.clone(),
             bucket_key,
             permission,
             expires,
         );
 
-        let noise = Noise::from_slice(bucket_id.as_bytes().as_slice()).unwrap(); // Do we even need it?
+        let noise = Noise::from_slice(bucket_guid.as_slice()).unwrap(); // Do we even need it?
         let signature = secret_key.sign(hash_output, Some(noise));
         Self {
             version: 0,
@@ -248,7 +249,7 @@ impl DecentralizedSecretShareLink {
             self.expires,
             &mut hash_output,
         );
-        assert_eq!(hash_output.len(), 32);
+
         let mut output: [u8; 32] = [0; 32];
         output.clone_from_slice(&hash_output);
         output

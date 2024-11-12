@@ -1,5 +1,4 @@
 use core::slice::SlicePattern;
-use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::aead::rand_core::RngCore;
 use aes_gcm::Aes256Gcm;
 use aes_gcm::aes::cipher::crypto_common::OutputSizeUser;

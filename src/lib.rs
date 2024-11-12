@@ -2,10 +2,6 @@
 #![feature(slice_split_once)]
 #![feature(associated_type_defaults)]
 extern crate core;
-extern crate core;
-extern crate core;
-extern crate core;
-extern crate core;
 
 use core::slice::SlicePattern;
 use serde::de::Expected;
@@ -25,8 +21,6 @@ pub mod unix_timestamp;
 pub mod util;
 pub mod encryption;
 pub mod webhook;
-pub mod compression;
-pub mod payment;
 pub mod region;
 #[cfg(feature = "middleware")]
 pub mod middleware;
@@ -35,9 +29,9 @@ pub mod key;
 pub mod storage_engine;
 pub mod bucket;
 pub mod share;
-pub mod authentication;
 mod user_settings;
 pub mod token;
+pub mod account;
 
 #[derive(Clone, Default, Eq, PartialEq, strum::Display, strum::EnumString)]
 pub enum WebhookSignatureScheme {
@@ -142,16 +136,6 @@ pub enum DownloadFormat {
 
 
 
-bitflags::bitflags! {
-    /// NOTE* can not just cast verification between u32 and i32 because of bit flip
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-    pub struct Verification : i16 {
-        const UNVERIFIED = 0b0000_0000_0000_0000;
-        const EMAIL = 0b0000_0000_0000_0001;
-        const PHONE = 0b0000_0000_0000_0010;
-        const TOTP = 0b0000_0000_0000_0100;
-    }
-}
 
 
 

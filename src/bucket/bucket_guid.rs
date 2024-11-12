@@ -48,7 +48,7 @@ impl BucketGuid {
 
 impl SlicePattern for BucketGuid {
     type Item = u8;
-    /// 256-bit array.
+    /// 8-bit array containing 256-bits.
     fn as_slice(&self) -> &[Self::Item] {
         let mut slice = [0u8; 32];
         slice[0..16].copy_from_slice(self.user_id.as_bytes());

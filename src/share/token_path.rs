@@ -27,11 +27,11 @@ impl Display for TokenPath {
 pub enum PathVersionParseError {
     #[error("InvalidFormat")]
     InvalidFormat,
-    #[error(transparent)]
+    #[error("InvalidVersionFormat")]
     InvalidVersionFormat,
-    #[error(transparent)]
+    #[error("MissingToken")]
     MissingToken,
-    #[error(transparent)]
+    #[error("InvalidSharePrefix")]
     InvalidSharePrefix,
 }
 

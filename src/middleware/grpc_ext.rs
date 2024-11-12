@@ -4,13 +4,13 @@ use http::HeaderName;
 use mime::Mime;
 use tonic::metadata::{Ascii, MetadataValue};
 use tonic::{Request, Response};
-use crate::authentication::token::ApiToken;
+use crate::account::authentication::token::ApiToken;
 use crate::client::middleware::metadata::{IdempotencyToken, RequestBuilderAuthorizationMetadataExt, RequestBuilderContentTypeMetadataExt, RequestBuilderIdempotencyTokenMetadataSetterExt, ResponseRatelimitHeaderExtractorExt, ResponseUserAgentHeaderExtractorExt};
 use crate::client::middleware::ratelimit::RatelimitMetadata;
 use crate::client::middleware::user_agent::UserAgent;
 use crate::token::access_token::AccessToken;
 use crate::token::idempotency_token::IdempotencyToken;
-use super::{RequestBuilderAuthorizationMetadataSetterExt, RequestBuilderContentTypeMetadataSetterExt};
+use super::{RequestBuilderAuthorizationMetadataExt, RequestBuilderAuthorizationMetadataSetterExt, RequestBuilderContentTypeMetadataExt, RequestBuilderContentTypeMetadataSetterExt, RequestBuilderIdempotencyTokenMetadataSetterExt, ResponseRatelimitHeaderExtractorExt, ResponseUserAgentHeaderExtractorExt};
 
 
 impl<T> RequestBuilderAuthorizationMetadataExt for Request<T> {
@@ -71,6 +71,7 @@ impl <T> RequestBuilderIdempotencyTokenMetadataSetterExt for Request<T> {
     fn set_idempotency_token(&mut self, idempotency_token: &IdempotencyToken) -> Result<(), Self::Error> {
         todo!()
     }
+
 }
 pub mod IntoMetadataKey = tonic::metadata::map;
 impl IntoMetadataKey for HeaderName {
