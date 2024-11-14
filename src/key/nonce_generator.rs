@@ -1,7 +1,7 @@
 use digest::{generic_array, typenum};
 use digest::generic_array::{ArrayLength, GenericArray};
 use generic_array::typenum::IsGreaterOrEqual;
-use secrecy::Zeroize;
+use zeroize::Zeroize;
 
 use super::{DeterministicNonceGenerator, Nonce, NonceGenerator};
 

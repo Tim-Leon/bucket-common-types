@@ -30,7 +30,7 @@ impl DecentralizedShareLink {
     const VERSION: SharingApiPath = SharingApiPath::V1;
     pub fn new(region: Option<RegionCluster>, bucket_guid: BucketGuid, expires: OffsetDateTime, permission: BucketPermissionFlags ,secret_signing_key: &ed25519_compact::SecretKey) -> Self {
         let token = DecentralizedShareToken::new(&bucket_guid, &permission, &expires, &region);
-        let signature = token.sign(&secret_signing_key);
+        let signature = token.sign(&secret_signing_key, &bucket_guid);
         Self {
             scheme: Scheme::HTTPS,
             version: Self::VERSION,
