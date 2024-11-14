@@ -29,16 +29,12 @@ pub mod key;
 pub mod storage_engine;
 pub mod bucket;
 pub mod share;
-mod user_settings;
+pub mod user_settings;
 pub mod token;
 pub mod account;
+pub mod metric;
 
-#[derive(Clone, Default, Eq, PartialEq, strum::Display, strum::EnumString)]
-pub enum WebhookSignatureScheme {
-    #[default]
-    ED25519,
-    HmacSha256,
-}
+
 
 /// Theses are all the supported encoding for files that are uploaded or downloaded.
 #[derive(Clone, Eq, PartialEq, strum::Display, strum::EnumString)]

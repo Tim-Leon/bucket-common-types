@@ -8,6 +8,7 @@ use crate::account::authentication::token::ApiToken;
 use crate::client::middleware::metadata::{IdempotencyToken, RequestBuilderAuthorizationMetadataExt, RequestBuilderContentTypeMetadataExt, RequestBuilderIdempotencyTokenMetadataSetterExt, ResponseRatelimitHeaderExtractorExt, ResponseUserAgentHeaderExtractorExt};
 use crate::client::middleware::ratelimit::RatelimitMetadata;
 use crate::client::middleware::user_agent::UserAgent;
+use crate::middleware::types::UserAgent;
 use crate::token::access_token::AccessToken;
 use crate::token::idempotency_token::IdempotencyToken;
 use super::{RequestBuilderAuthorizationMetadataExt, RequestBuilderAuthorizationMetadataSetterExt, RequestBuilderContentTypeMetadataExt, RequestBuilderContentTypeMetadataSetterExt, RequestBuilderIdempotencyTokenMetadataSetterExt, ResponseRatelimitHeaderExtractorExt, ResponseUserAgentHeaderExtractorExt};

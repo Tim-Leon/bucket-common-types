@@ -6,6 +6,7 @@ use crate::token::idempotency_token::IdempotencyToken;
 
 pub mod grpc_ext;
 pub mod http_ext;
+pub mod types;
 
 pub const AUTHORIZATION_VALUE_MAX_LENGTH: usize = 120;
 pub const CONTENT_TYPE_VALUE_MAX_LENGTH: usize = 12;
@@ -30,6 +31,7 @@ pub trait RequestBuilderAuthorizationMetadataSetterExt {
     const AUTHORIZATION_VALUE_MAX_LENGTH: usize = AUTHORIZATION_VALUE_MAX_LENGTH;
     fn set_authorization_metadata(&mut self, api_token: &AccessToken) -> Result<(), Self::Error>;
 }
+
 
 pub trait RequestBuilderContentTypeMetadataExt {
     type Error : Debug;

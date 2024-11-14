@@ -47,3 +47,8 @@
 //    pub storage_engine_name: String,
 //    pub storage_engine_type: StorageEngineType,
 //}
+
+use uuid::Uuid;
+
+pub struct StorageEngineType(pub Uuid);
+pub struct StorageEngineName(pub String);

@@ -101,7 +101,7 @@ impl TryInto<pkcs8::PrivateKeyInfo<'_>> for MasterKey256 {
 impl TryFrom<pkcs8::PrivateKeyInfo> for MasterKey256 {
     type Error = Infallible;
     fn try_from(value: pkcs8::PrivateKeyInfo) -> Result<Self, Self::Error> {
-        value.algorithm.oid ==
+        value.algorithm.oid
         Ok(
             Self {
                 secrete: SecureGenericArray::from(value.private_key),
