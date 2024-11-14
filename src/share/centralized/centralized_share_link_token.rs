@@ -1,12 +1,7 @@
-use base64::{engine::general_purpose, DecodeError, Engine};
-use serde::{Deserialize, Serialize};
-use std::convert::Infallible;
-use std::fmt::{Display, Formatter};
-use rand::{CryptoRng, RngCore};
 use crate::bucket::bucket_feature_flags::BucketFeaturesFlags;
 use crate::region::RegionCluster;
-use crate::share::share_link_token::ShareLinkToken;
-use crate::util::{DOMAIN_URL, SHARE_PATH_URL};
+use crate::share::share_link_token::{ShareLinkToken, ShareLinkTokens};
+use std::fmt::Display;
 
 
 /*
@@ -15,7 +10,7 @@ use crate::util::{DOMAIN_URL, SHARE_PATH_URL};
 */
 #[derive(Debug)]
 pub struct CentralizedShareLinkToken {
-    pub token: ShareLinkToken,
+    pub token: ShareLinkTokens,
     pub region: Option<RegionCluster>,
 }
 
@@ -28,7 +23,7 @@ pub enum CentralizedShareLinkTokenGeneratorError {
 
 
 impl CentralizedShareLinkToken {
-    pub fn new(token: ShareLinkToken, region: Option<RegionCluster>, bucket_features_flags: &BucketFeaturesFlags) -> Result<Self, CentralizedShareLinkTokenGeneratorError> {
+    pub fn new(token: ShareLinkTokens, region: Option<RegionCluster>, bucket_features_flags: &BucketFeaturesFlags) -> Result<Self, CentralizedShareLinkTokenGeneratorError> {
         // Check if the bucket feature IS_CENTRALIZED_SHARABLE is enabled
         if !bucket_features_flags.contains(BucketFeaturesFlags::IS_CENTRALIZED_SHARABLE) {
             return Err(CentralizedShareLinkTokenGeneratorError::BucketFeatureCentralizedShareableNotEnabled);

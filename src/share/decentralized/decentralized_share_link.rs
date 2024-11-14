@@ -1,20 +1,20 @@
 use core::slice::SlicePattern;
 use digest::generic_array::GenericArray;
 use digest::{Digest, OutputSizeUser};
+use http::uri::Scheme;
 use time::OffsetDateTime;
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::region::RegionCluster;
-use crate::share::decentralized::decentralized_share_token::DecentralizedShareToken;
+use crate::share::decentralized::decentralized_share_token::{DecentralizedShareToken, TokenSignature};
 use crate::share::versioning::SharingApiPath;
 
 /// All the information is encoded into a URL, Note that differing from the SecreteShareLinkUrlEncoded, this does not contain an encryption key.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct DecentralizedShareLink {
-    pub version: SharingApiPath,
-
+    pub scheme: Scheme,
     pub region: Option<RegionCluster>,
-
+    pub version: SharingApiPath,
     pub bucket_guid: BucketGuid,
     /// The permission associated with the url.
     pub permission: BucketPermissionFlags,
@@ -23,7 +23,7 @@ pub struct DecentralizedShareLink {
     /// Token
     pub token: DecentralizedShareToken,
     // The signature is stored in the link. This makes sure that the link is not tampered with.
-    pub signature: ed25519_compact::Signature,
+    pub signature: TokenSignature,
 }
 
 impl DecentralizedShareLink {
@@ -32,7 +32,8 @@ impl DecentralizedShareLink {
         let token = DecentralizedShareToken::new(&bucket_guid, &permission, &expires, &region);
         let signature = token.sign(&secret_signing_key);
         Self {
-           version: Self::VERSION,
+            scheme: Scheme::HTTPS,
+            version: Self::VERSION,
             region,
             bucket_guid,
             expires,

@@ -67,7 +67,7 @@ impl <T> RequestBuilderContentTypeMetadataSetterExt for Request<T> {
 
 impl <T> RequestBuilderIdempotencyTokenMetadataSetterExt for Request<T> {
     type Error = Infallible;
-    const IDEMPOTENCY_TOKEN: &'static HeaderName = &();
+    const IDEMPOTENCY_TOKEN_KEY: &'static HeaderName = &();
 
     fn set_idempotency_token(&mut self, idempotency_token: &IdempotencyToken) -> Result<(), Self::Error> {
         todo!()
@@ -86,7 +86,7 @@ impl <T> ResponseRatelimitHeaderExtractorExt<T> for Response<T> {
     const RATE_LIMIT_KEY: HeaderName = ();
 
     fn extract(&self) -> Result<Self::OutputType, Self::Error> {
-        Ok(self.metadata().get("ratelimit").unwrap().try_into().unwrap())
+        Ok(self.metadata().get(Self::RATE_LIMIT_KEY).unwrap().try_into().unwrap())
     }
 }
 

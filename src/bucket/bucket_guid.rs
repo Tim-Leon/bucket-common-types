@@ -1,5 +1,5 @@
 use core::slice::SlicePattern;
-use std::fmt;
+use std::{fmt, mem};
 use std::str::FromStr;
 use logos::Source;
 use serde::{Deserialize, Serialize};
@@ -13,20 +13,65 @@ pub struct BucketGuid {
     pub bucket_id: uuid::Uuid,
 }
 
-// Implements to string trait also.
-impl fmt::Display for BucketGuid {
-    /// When displaying the BucketGuid in a nice way we separate user_id and bucket_id with a `-` the parser will ignore all ``-`` so it works fine..
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let res = write!(
-            f,
-            "{}-{}",
-            self.user_id.as_simple(),
-            self.bucket_id.as_simple()
-        );
-        res
+/// Enum to specify different formats for displaying/parsing BucketGuid,
+/// It will use the specified underlying UUID format, but will combine the UUIDs in different format depending on whether it is using
+/// Hyphenated or Simple
+pub enum BucketGuidFormat {
+    Hyphenated(UuidFormat),
+    Simple(UuidFormat),
+}
+
+/// Enum to specify different formats for displaying/parsing UUID.
+pub enum UuidFormat {
+    Hyphenated,
+    Simple,
+    Braced,
+    Urn,
+}
+
+impl UuidFormat {
+    pub fn fmt_uuid(&self, f: &mut fmt::Formatter<'_>, uuid: &Uuid) -> fmt::Result {
+        match self {
+            UuidFormat::Hyphenated => write!(f, "{}", uuid.hyphenated()),
+            UuidFormat::Simple => write!(f, "{}", uuid.simple()),
+            UuidFormat::Braced => write!(f, "{}", uuid.braced()),
+            UuidFormat::Urn => write!(f, "{}", uuid.urn()),
+        }
     }
 }
 
+impl fmt::Display for BucketGuid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Default display format: Hyphenated
+        self.fmt_with(f, BucketGuidFormat::Hyphenated(UuidFormat::Simple))
+    }
+}
+impl BucketGuid {
+    /// Format the BucketGuid using the specified format.
+    pub fn fmt_with(&self, f: &mut fmt::Formatter<'_>, format: BucketGuidFormat) -> fmt::Result {
+        match format {
+            BucketGuidFormat::Hyphenated(uuid_format) => {
+                uuid_format.fmt_uuid(f, &self.user_id)?;
+                write!(f, "-")?;
+                uuid_format.fmt_uuid(f, &self.bucket_id)
+            }
+            BucketGuidFormat::Simple(uuid_format) => {
+                uuid_format.fmt_uuid(f, &self.user_id)?;
+                uuid_format.fmt_uuid(f, &self.bucket_id)
+            }
+        }
+    }
+}
+
+//match format {
+//    BucketGuidFormat::Hyphenated(uuid_format) => write!(f, "{}-{}", self.user_id, self.bucket_id),
+//    BucketGuidFormat::Simple(uuid_format) => write!(
+//        f,
+//        "{}{}",
+//        self.user_id,
+//        self.bucket_id
+//    ),
+//}
 impl BucketGuid {
     pub fn new(user_id: uuid::Uuid, bucket_id: uuid::Uuid) -> Self {
         Self { user_id, bucket_id }
@@ -42,13 +87,15 @@ impl BucketGuid {
     // Define the size of a ``BucketGuid`` in bytes.
     pub const fn size() -> usize {
         // Since each UUID is 16 bytes, the total length is 32 bytes
-        32
+        let size:usize = 32;
+        debug_assert_eq!(size, mem::size_of::<BucketGuid>());
+        size
     }
 }
 
 impl SlicePattern for BucketGuid {
     type Item = u8;
-    /// 8-bit array containing 256-bits.
+    /// 8-bit array collection of 32 items.
     fn as_slice(&self) -> &[Self::Item] {
         let mut slice = [0u8; 32];
         slice[0..16].copy_from_slice(self.user_id.as_bytes());

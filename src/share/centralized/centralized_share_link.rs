@@ -1,28 +1,63 @@
-use crate::share::centralized::centralized_secrete_share_link::TokenPath;
+use crate::region::RegionCluster;
+use crate::share::centralized::centralized_secrete_share_link_token::CentralizedShareLinkToken;
+use crate::share::centralized::centralized_share_link_token::CentralizedShareLinkToken;
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
-use crate::share::share_link_token::ShareLinkToken;
+use crate::share::token_path::TokenPath;
 use crate::share::versioning::SharingApiPath;
-use base64::{DecodeError, Engine};
+use crate::util::{DOMAIN_NAME, DOMAIN_URL};
+use base64::Engine;
 use http::uri::Scheme;
 use http::Uri;
 use std::convert::Infallible;
 use std::fmt::Display;
+use std::io::BufRead;
 use std::str::FromStr;
 
+/// Would use the URL create to store the data but the URL crate does not have a Builder Pattern only parser, very sad.
 pub struct CentralizedShareLink {
     pub scheme: Scheme,
     pub fqdn: FullyQualifiedDomainName,
     pub path: TokenPath,
+}
 
+impl TryFrom<CentralizedShareLinkToken> for CentralizedShareLink {
+    type Error = Infallible;
+
+    fn try_from(value: CentralizedShareLinkToken) -> Result<Self, Self::Error> {
+
+        // Version and token encoding
+        let path = TokenPath {
+            version: SharingApiPath::V1,
+            token: value.token,
+        };
+
+        let subdomain = match value.region {
+            None => { None }
+            Some(region) => { Some( Box::from( region.to_string().as_str())) }
+        };
+
+        let fqdn = FullyQualifiedDomainName {
+            subdomain,
+            domain: Box::from(DOMAIN_NAME),
+            top_level_domain: Box::from(".co"),
+        };
+
+        // Return the constructed struct
+        Ok(CentralizedShareLink {
+            scheme: Scheme::HTTPS,
+            fqdn,
+            path,
+        })
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum CentralizedShareLinkUriEncodingError {
+pub enum CentralizedShareLinkTokenUriEncodedParseError {
     #[error(transparent)]
     FailedToParse(#[from] http::Error),
 }
 impl TryInto<Uri> for CentralizedShareLink {
-    type Error = CentralizedShareLinkUriEncodingError;
+    type Error = CentralizedShareLinkTokenUriEncodedParseError;
 
     fn try_into(self) -> Result<Uri, Self::Error> {
         // Create URI, handling errors with `?`
@@ -35,41 +70,148 @@ impl TryInto<Uri> for CentralizedShareLink {
     }
 }
 
+
+// Custom error enum for try_from
 #[derive(thiserror::Error, Debug)]
-pub enum ShareLinkUrlParsingError {
-    #[error("Failed to decode token")]
-    DecodeError(#[from] DecodeError),
-    #[error("Parse to string error")]
-    ParseToString(#[source] Infallible),
-    #[error("Invalid token length")]
-    InvalidTokenLength(Vec<u8>),
+pub enum CentralizedSecreteShareLinkTokenUrlEncodedError {
+    #[error("Invalid URI scheme")]
+    InvalidScheme,
+
+    #[error("Invalid FQDN format")]
+    InvalidFqdnFormat,
+
+    #[error("Invalid path format")]
+    InvalidPathFormat,
+}
+impl TryFrom<Uri> for CentralizedShareLink {
+    type Error = CentralizedSecreteShareLinkTokenUrlEncodedError;
+
+    fn try_from(value: Uri) -> Result<Self, Self::Error> {
+        // Handle scheme
+        let scheme = match value.scheme() {
+            None => return Err(CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidScheme),
+            Some(scheme) => scheme.clone(),
+        };
+
+        // Handle host (FQDN)
+        let fqdn = match value.host() {
+            None => return Err(CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidFqdnFormat),
+            Some(host) => FullyQualifiedDomainName::from_str(host)
+                .map_err(|_| CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidFqdnFormat)?,
+        };
+
+        // Handle path
+        let path = TokenPath::from_str(value.path())
+            .map_err(|_| CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidPathFormat)?;
+
+        // Construct and return the struct
+        Ok(Self {
+            scheme,
+            fqdn,
+            path,
+        })
+    }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use http::Uri;
+    use std::str::FromStr;
 
-impl TryFrom<url::Url> for CentralizedShareLink {
-    type Error = ShareLinkUrlParsingError;
-    fn try_from(url: url::Url) -> Result<Self, Self::Error> {
-        let path = url.path();
-        let parts: Vec<&str> = path.split('/').collect();
+    // Test for FullyQualifiedDomainName parsing
+    #[test]
+    fn test_fully_qualified_domain_name_parsing() {
+        let valid_fqdn = "subdomain.example.com";
+        let parsed = FullyQualifiedDomainName::from_str(valid_fqdn);
+        assert!(parsed.is_ok());
+        let fqdn = parsed.unwrap();
+        assert_eq!(fqdn.domain, "example.com");
+        assert_eq!(fqdn.subdomain, Some("subdomain".to_string()));
 
-        // Validate path structure and length
-        if parts.len() < 2 {
-            return Err(ShareLinkUrlParsingError::InvalidPathStructure);
+        let invalid_fqdn = "example";
+        let parsed_invalid = FullyQualifiedDomainName::from_str(invalid_fqdn);
+        assert!(parsed_invalid.is_ok());
+        let fqdn_invalid = parsed_invalid.unwrap();
+        assert_eq!(fqdn_invalid.domain, "example");
+        assert!(fqdn_invalid.subdomain.is_none());
+
+        let empty_fqdn = "";
+        let parsed_empty = FullyQualifiedDomainName::from_str(empty_fqdn);
+        assert!(parsed_empty.is_err());
+    }
+
+    // Test for CentralizedSecreteShareLinkTokenUrlEncodedV1 conversion from CentralizedSecretShareLinkToken
+    #[test]
+    fn test_centralized_secret_share_link_token_urlencoded_v1_conversion() {
+        let token = CentralizedShareLinkToken {
+            token: "test_token".to_string(),
+            region: Some(RegionCluster {
+                region: "us-west".to_string(),
+            }),
+        };
+
+        let result: CentralizedShareLink = token.try_into().unwrap();
+        assert_eq!(result.scheme, Scheme::HTTPS);
+        assert_eq!(result.fqdn.domain, DOMAIN_URL.to_string());
+        assert_eq!(result.fqdn.subdomain, Some("us-west".to_string()));
+        assert_eq!(result.path.version.to_string(), SharingApiPath::V1.to_string());
+    }
+
+    // Test for TryInto<Uri> conversion for CentralizedSecreteShareLinkTokenUrlEncodedV1
+    #[test]
+    fn test_centralized_secrete_share_link_token_urlencoded_v1_to_uri() {
+        let token = CentralizedShareLinkToken {
+            token: "test_token".to_string(),
+            region: Some(RegionCluster {
+                region: "us-west".to_string(),
+            }),
+        };
+
+        let link_url_encoded: CentralizedShareLink = token.try_into().unwrap();
+        let uri: Uri = link_url_encoded.try_into().unwrap();
+
+        assert_eq!(uri.scheme_str(), Some("https"));
+        assert_eq!(uri.host(), Some("us-west.example.com"));
+        assert_eq!(uri.path(), "/share/v1/test_token");
+    }
+
+    // Test error handling for TryFrom<Uri> for invalid FQDN
+    #[test]
+    fn test_try_from_uri_invalid_fqdn() {
+        let uri = Uri::from_str("https://invalid_fqdn.com/share/v1/token").unwrap();
+        let result: Result<CentralizedShareLink, _> = uri.try_into();
+        assert!(result.is_err());
+        if let Err(CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidFqdnFormat) = result {
+            // Expected error
+        } else {
+            panic!("Expected InvalidFqdnFormat error");
         }
+    }
 
-        // Parse token from the path
-        let token = ShareLinkToken::from_base64_url_safe(parts[1])?;
+    // Test error handling for TryFrom<Uri> for invalid scheme
+    #[test]
+    fn test_try_from_uri_invalid_scheme() {
+        let uri = Uri::from_str("ftp://us-west.example.com/share/v1/token").unwrap();
+        let result: Result<CentralizedShareLink, _> = uri.try_into();
+        assert!(result.is_err());
+        if let Err(CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidScheme) = result {
+            // Expected error
+        } else {
+            panic!("Expected InvalidScheme error");
+        }
+    }
 
-        // Parse FQDN from host string, handling possible errors
-        let fqdn = FullyQualifiedDomainName::from_str(url.host_str().unwrap_or("")).map_err(|_| ShareLinkUrlParsingError::InvalidPathStructure)?;
-
-        Ok(Self {
-            scheme: Scheme::HTTPS,
-            fqdn,
-            path: TokenPath {
-                version: SharingApiPath::V1,
-                token,
-            },
-        })
+    // Test for invalid path in TryFrom<Uri>
+    #[test]
+    fn test_try_from_uri_invalid_path() {
+        let uri = Uri::from_str("https://us-west.example.com/invalid_path").unwrap();
+        let result: Result<CentralizedShareLink, _> = uri.try_into();
+        assert!(result.is_err());
+        if let Err(CentralizedSecreteShareLinkTokenUrlEncodedError::InvalidPathFormat) = result {
+            // Expected error
+        } else {
+            panic!("Expected InvalidPathFormat error");
+        }
     }
 }

@@ -37,7 +37,7 @@ TCryptoRng: rand::RngCore, TNonceLength: generic_array::ArrayLength<T> + IsGreat
         // Fill the last 8 bytes with the random u64
         nonce[4..12].copy_from_slice(&self.csprng.next_u64().to_be_bytes());
         self.counter += 1;
-        nonce
+        nonce.try_into().unwrap()
     }
 }
 

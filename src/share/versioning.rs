@@ -5,6 +5,7 @@
 pub enum SharingApiPath {
     #[strum(serialize = "share/v1/")]
     V1 = 1, // First version number
+
     // Future versions can be added here, e.g., V2, V3
 }
 

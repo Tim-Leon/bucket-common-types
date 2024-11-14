@@ -9,6 +9,7 @@ use base64::{Engine, engine::general_purpose};
 use digest::generic_array::GenericArray;
 use digest::OutputSizeUser;
 use ed25519_compact::Noise;
+use http::uri::Scheme;
 use sha3::{Digest, Sha3_224};
 use time::OffsetDateTime;
 use crate::bucket::bucket_guid::BucketGuid;
@@ -16,6 +17,9 @@ use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::encryption::{BucketEncryptionScheme, EncryptionAlgorithm};
 use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
 use crate::region::RegionCluster;
+use crate::share::decentralized::decentralized_secrete_share_token::DecentralizedSecretShareToken;
+use crate::share::decentralized::decentralized_share_token::{DecentralizedShareToken, TokenSignature};
+use crate::share::share_link_token::ShareLinkTokens::SecreteShareLinkToken;
 use crate::share::versioning::SharingApiPath;
 use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 
@@ -27,8 +31,9 @@ use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 // And that SecretShareLink use
 #[derive(Debug,  Clone)]
 pub struct DecentralizedSecretShareLink {
-    pub version: SharingApiPath,
+    pub scheme: Scheme,
     pub region_cluster: Option<RegionCluster>,
+    pub version: SharingApiPath,
     pub bucket_guid: BucketGuid,
     // Depending on what encryption used, the bucket_key might be different.
     // Note that the encryption algorithm chosen should have built in integrity check such as AES256-GCM to be considered fully secure or need an external source of integrity check.
@@ -42,7 +47,10 @@ pub struct DecentralizedSecretShareLink {
     pub permission: BucketPermissionFlags,
     /// For how long the signature is going to be valid
     pub expires: OffsetDateTime,
-    pub signature: ed25519_compact::Signature, // The signature is stored in the link. This makes sure that the link is not tampered with.
+    // Token
+    pub token: DecentralizedSecretShareToken,
+    // The signature is stored in the link. This makes sure that the link is not tampered with.
+    pub signature: TokenSignature,
 }
 
 
@@ -204,32 +212,27 @@ impl DecentralizedSecretShareLink {
         Ok(public_signing_key.verify(hash_output, &self.signature)?)
     }
 
-
+    const VERSION: SharingApiPath = SharingApiPath::V1;
     pub fn new(
-        region_cluster: RegionCluster,
+        region_cluster: Option<RegionCluster>,
         bucket_guid: BucketGuid,
         bucket_key: aes_gcm::Key<Aes256Gcm>,
         permission: BucketPermissionFlags,
         expires: OffsetDateTime,
-        secret_key: &ed25519_compact::SecretKey,
     ) -> Self {
-        let hash_output = Self::hash::<Sha3_224>(
-            region_cluster,
-            bucket_guid.clone(),
-            bucket_key,
-            permission,
-            expires,
-        );
+        let share_token = DecentralizedSecretShareToken::new(&region_cluster, &bucket_guid, &bucket_key, &permission, &expires);
+        share_token.
 
         let noise = Noise::from_slice(bucket_guid.as_slice()).unwrap(); // Do we even need it?
         let signature = secret_key.sign(hash_output, Some(noise));
         Self {
-            version: 0,
-            region_cluster,
-            user_id,
-            bucket_id,
-            bucket_encryption: EncryptionAlgorithm::None,
-            bucket_key,
+            scheme: Scheme::HTTPS,
+            region_cluster: Some(region_cluster),
+            version: Self::VERSION,
+
+            bucket_guid,
+            bucket_encryption: BucketEncryptionScheme {},
+            bucket_key: (),
             permission,
             expires,
             signature,

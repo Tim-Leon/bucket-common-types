@@ -8,12 +8,13 @@ use digest::{Digest, OutputSizeUser};
 use ed25519_compact::{Noise, PublicKey, SecretKey, Signature};
 use time::OffsetDateTime;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DecentralizedShareToken {
     pub token: ShareLinkToken,
     pub region: Option<RegionCluster>,
 }
 
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct TokenSignature(pub Signature);
 
 impl DecentralizedShareToken {
@@ -47,11 +48,10 @@ impl DecentralizedShareToken {
     pub fn sign(&self, secrete_key: &SecretKey, bucket_guid: &BucketGuid) -> TokenSignature {
         //let noise = Noise::from_slice(self.region);
         let noise = Noise::from_slice(bucket_guid.as_slice()).unwrap();
-        secrete_key.sign(&self.token.0.as_slice(),Some(noise))
+        TokenSignature(secrete_key.sign(&self.token.0.as_slice(),Some(noise)))
     }
 
-    pub fn verify(&self, public_key: &PublicKey, bucket_guid: &BucketGuid, signature: TokenSignature) -> bool {
-        let noise = Noise::from_slice(bucket_guid.as_slice()).unwrap();
-        public_key.verify(self.token.0.as_slice(), Some(noise))
+    pub fn verify(&self, public_key: &PublicKey, signature: &TokenSignature) -> Result<(), ed25519_compact::Error> {
+        public_key.verify(self.token.0.as_slice(), &signature.0)
     }
 }

@@ -1,17 +1,13 @@
-use core::slice::SlicePattern;
-use aes_gcm::aead::rand_core::RngCore;
-use aes_gcm::Aes256Gcm;
-use aes_gcm::aes::cipher::crypto_common::OutputSizeUser;
-use digest::Digest;
-use digest::generic_array::GenericArray;
-use rand::CryptoRng;
-use time::OffsetDateTime;
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::key::CryptoHashDerivedKeyType;
 use crate::region::RegionCluster;
-use crate::share::decentralized::decentralized_secrete_share_link_url_encoded::DecentralizedSecretShareLink;
 use crate::share::share_link_token::SecreteShareLinkToken;
+use aes_gcm::aes::cipher::crypto_common::OutputSizeUser;
+use core::slice::SlicePattern;
+use digest::generic_array::GenericArray;
+use digest::Digest;
+use time::OffsetDateTime;
 
 pub struct DecentralizedSecretShareToken {
     pub token: SecreteShareLinkToken,
@@ -45,15 +41,20 @@ impl DecentralizedSecretShareToken
     }
     /// Computes the decentralized secret sharing token. The token is used for setting permissions for a bucket without sharing the secrete. Unlike centralized sharing
     /// The share link is generated from the token.
-    pub fn new(secrete_share_link: &DecentralizedSecretShareLink) -> Self{
-        let mut token = Self::hash(&secrete_share_link.region_cluster,
-                                   &secrete_share_link.bucket_guid,
-                                   &secrete_share_link.bucket_key,
-                                   &secrete_share_link.permission,
-                                   &secrete_share_link.expires);
+    pub fn new<TKeyLength: generic_array::ArrayLength>(
+                        region_cluster: &Option<RegionCluster>,
+                       bucket_guid: &BucketGuid,
+                       bucket_key: &impl CryptoHashDerivedKeyType<TKeyLength>,
+                       permission: &BucketPermissionFlags,
+                       expires: &OffsetDateTime) -> Self{
+        let mut token = Self::hash(&region_cluster,
+                                   &bucket_guid,
+                                   &bucket_key,
+                                   &permission,
+                                   &expires);
         Self {
             token: <[u8; 32]>::try_from(token.as_slice()).unwrap(),
-            region: secrete_share_link.region_cluster.clone(),
+            region: region_cluster.clone(),
         }
     }
 }
