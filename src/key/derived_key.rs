@@ -7,6 +7,7 @@ use secrecy::ExposeSecret;
 use sha3::digest;
 use sha3::digest::Update;
 use sha3::Sha3_256;
+use crate::encryption::EncryptionAlgorithm;
 use crate::key::{CryptoHashDerivedKeyType, CryptoMasterKey, SecureGenericArray};
 
 /// 256-bit key
@@ -37,6 +38,8 @@ impl<TKeyLength> CryptoHashDerivedKeyType<TKeyLength> for Sha3_256CryptoHashDeri
 {
     type Error = Infallible;
     type CryptoHasher = Sha3_256;
+
+
     /// Generates a `HashDerivedKey` from a master key and a nonce.
     ///
     /// # Parameters
@@ -50,11 +53,11 @@ impl<TKeyLength> CryptoHashDerivedKeyType<TKeyLength> for Sha3_256CryptoHashDeri
         hasher.update(master_key.as_slice());
         hasher.update(nonce);
         // Create a SecureGenericArray from the finalized hash
-        Self {
+       Ok( Self {
             secret: SecureGenericArray {
                 0: GenericArray::from_slice(&hasher.finalize()),
             },
-        }
+        })
     }
 }
 

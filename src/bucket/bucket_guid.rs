@@ -47,6 +47,14 @@ impl fmt::Display for BucketGuid {
     }
 }
 impl BucketGuid {
+    /// Returns a 32-byte array representation of the BucketGuid.
+    pub fn to_bytes(&self) -> [u8; 32] {
+            let mut slice = [0u8; 32];
+            slice[0..16].copy_from_slice(self.user_id.as_bytes());
+            slice[16..32].copy_from_slice(self.bucket_id.as_bytes());
+            slice
+    }
+
     /// Format the BucketGuid using the specified format.
     pub fn fmt_with(&self, f: &mut fmt::Formatter<'_>, format: BucketGuidFormat) -> fmt::Result {
         match format {
@@ -63,15 +71,7 @@ impl BucketGuid {
     }
 }
 
-//match format {
-//    BucketGuidFormat::Hyphenated(uuid_format) => write!(f, "{}-{}", self.user_id, self.bucket_id),
-//    BucketGuidFormat::Simple(uuid_format) => write!(
-//        f,
-//        "{}{}",
-//        self.user_id,
-//        self.bucket_id
-//    ),
-//}
+
 impl BucketGuid {
     pub fn new(user_id: uuid::Uuid, bucket_id: uuid::Uuid) -> Self {
         Self { user_id, bucket_id }
@@ -87,22 +87,10 @@ impl BucketGuid {
     // Define the size of a ``BucketGuid`` in bytes.
     pub const fn size() -> usize {
         // Since each UUID is 16 bytes, the total length is 32 bytes
-        let size:usize = 32;
-        debug_assert_eq!(size, mem::size_of::<BucketGuid>());
-        size
+        32
     }
 }
 
-impl SlicePattern for BucketGuid {
-    type Item = u8;
-    /// 8-bit array collection of 32 items.
-    fn as_slice(&self) -> &[Self::Item] {
-        let mut slice = [0u8; 32];
-        slice[0..16].copy_from_slice(self.user_id.as_bytes());
-        slice[16..32].copy_from_slice(self.bucket_id.as_bytes());
-        &slice
-    }
-}
 
 impl FromStr for BucketGuid {
     type Err = BucketGuidParseError;
@@ -131,6 +119,11 @@ pub enum BucketGuidParseError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    // Very important, checks the size to ensure there is no opsy 
+    fn test_bucket_guid_size() {
+        debug_assert_eq!(BucketGuid::size(), std::mem::size_of::<BucketGuid>());
+    }
 
     // Test the `new` method to create a new BucketGuid
     #[test]

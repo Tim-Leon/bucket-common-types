@@ -11,6 +11,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::num::ParseIntError;
 use std::str::FromStr;
+use pkcs8::ObjectIdentifier;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 
@@ -23,6 +24,19 @@ pub enum EncryptionAlgorithm {
     // Must start with 'custom-' and then the name of the encryption. with a max length of 64 characters entirely.
     #[strum(to_string = "custom-{0}")]
     Custom(String),
+}
+
+
+impl EncryptionAlgorithm {
+    fn oid() -> Option<ObjectIdentifier> {
+        match Self {
+            EncryptionAlgorithm::None => { None }
+            EncryptionAlgorithm::AES256 => { Some(ObjectIdentifier::new("2.16.840.1.101.3.4.1.46").unwrap()) }
+            EncryptionAlgorithm::ChaCha20Poly1305 => { None }
+            EncryptionAlgorithm::XChaCha20Poly1305 => { None }
+            EncryptionAlgorithm::Custom(_) => { None }
+        }
+    }
 }
 
 #[derive(EnumString, PartialEq, Debug, Serialize, strum::Display, Clone, Eq, Deserialize)]
@@ -47,9 +61,6 @@ pub struct BucketEncryptionScheme {
     /// The encryption algorithm used to secure the data in the bucket.
     /// This is represented by the `EncryptionAlgorithm` enum.
     pub encryption: EncryptionAlgorithm,
-    /// Derive function used for the bucket.
-    /// Argon2iD is the most secure with PBKDF2 being less so but, docent require much memory.
-    pub kdf: KeyDeriveFunction,
 }
 
 
@@ -130,7 +141,6 @@ impl FromStr for BucketEncryptionScheme
             responsible: role,
             encryption: EncryptionAlgorithm::from_str(encryption.as_str()).unwrap(),
             version,
-            kdf: Default::default(),
         })
     }
 }

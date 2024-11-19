@@ -7,8 +7,12 @@ use aes_gcm::aes::cipher::crypto_common::OutputSizeUser;
 use core::slice::SlicePattern;
 use digest::generic_array::GenericArray;
 use digest::Digest;
+use ed25519_compact::{Noise, PublicKey, SecretKey};
+use generic_array::ArrayLength;
 use time::OffsetDateTime;
+use crate::share::decentralized::decentralized_share_token::TokenSignature;
 
+#[derive(Clone, Debug)]
 pub struct DecentralizedSecretShareToken {
     pub token: SecreteShareLinkToken,
     pub region: Option<RegionCluster>,
@@ -17,7 +21,7 @@ pub struct DecentralizedSecretShareToken {
 impl DecentralizedSecretShareToken
 {
 
-    pub fn hash<TDigest: Digest + OutputSizeUser, TKeyLength>(
+    pub fn hash<TDigest: Digest + OutputSizeUser, TKeyLength : ArrayLength>(
         region_cluster: &Option<RegionCluster>,
         bucket_guid: &BucketGuid,
         bucket_key: &impl CryptoHashDerivedKeyType<TKeyLength>,
@@ -49,12 +53,23 @@ impl DecentralizedSecretShareToken
                        expires: &OffsetDateTime) -> Self{
         let mut token = Self::hash(&region_cluster,
                                    &bucket_guid,
-                                   &bucket_key,
+                                   &bucket_key.as_slice(),
                                    &permission,
                                    &expires);
         Self {
-            token: <[u8; 32]>::try_from(token.as_slice()).unwrap(),
+            token:  SecreteShareLinkToken(<[u8; 32]>::try_from(token.as_slice()).unwrap()),
             region: region_cluster.clone(),
         }
+    }
+
+
+    pub fn sign(&self, secrete_key: &SecretKey, bucket_guid: &BucketGuid) -> TokenSignature {
+        //let noise = Noise::from_slice(self.region);
+        let noise = Noise::from_slice(bucket_guid.to_bytes()).unwrap();
+        TokenSignature(secrete_key.sign(&self.token.0.as_slice(),Some(noise)))
+    }
+
+    pub fn verify(&self, public_key: &PublicKey, signature: &TokenSignature) -> Result<(), ed25519_compact::Error> {
+        public_key.verify(self.token.0.as_slice(), &signature.0)
     }
 }

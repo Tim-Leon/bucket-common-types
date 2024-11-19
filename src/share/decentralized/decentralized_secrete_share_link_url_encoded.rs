@@ -6,7 +6,7 @@ use std::str::FromStr;
 use aes_gcm;
 use aes_gcm::Aes256Gcm;
 use base64::{Engine, engine::general_purpose};
-use digest::generic_array::GenericArray;
+use digest::generic_array::{ArrayLength, GenericArray};
 use digest::OutputSizeUser;
 use ed25519_compact::Noise;
 use http::uri::Scheme;
@@ -14,7 +14,8 @@ use sha3::{Digest, Sha3_224};
 use time::OffsetDateTime;
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
-use crate::encryption::{BucketEncryptionScheme, EncryptionAlgorithm};
+use crate::encryption::{BucketEncryptionScheme, EncryptionAlgorithm, Role};
+use crate::key::CryptoHashDerivedKeyType;
 use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
 use crate::region::RegionCluster;
 use crate::share::decentralized::decentralized_secrete_share_token::DecentralizedSecretShareToken;
@@ -82,19 +83,23 @@ fn hash_secret_share_link<D: Digest + OutputSizeUser>(
 
 impl Display for DecentralizedSecretShareLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let region_cluster = match self.region_cluster {
+            Some(region_cluster) => { write!()},
+            None => "",
+        };
         write!(
             f,
             "{}{}.{}/{}/{}#{}#{}#{}#{}",
             "https://",
-            self.region_cluster.to_string(),
+            region_cluster,
             DOMAIN_URL,
             SECRET_SHARE_PATH_URL,
             general_purpose::URL_SAFE_NO_PAD.encode(self.bucket_guid.as_slice()),
-            self.bucket_key.as_slice(),
+            general_purpose::URL_SAFE_NO_PAD.encode(self.bucket_key.as_slice()),
             general_purpose::URL_SAFE_NO_PAD.encode(self.permission.bits().to_be_bytes()),
             general_purpose::URL_SAFE_NO_PAD
                 .encode(bincode::serialize(&self.expires).unwrap().as_slice()),
-            general_purpose::URL_SAFE_NO_PAD.encode(self.signature.as_slice()),
+            general_purpose::URL_SAFE_NO_PAD.encode(self.signature.0.as_slice()),
         )
     }
 }
@@ -192,8 +197,6 @@ pub enum SecretShareLinkVerifySignatureError {
 }
 
 impl DecentralizedSecretShareLink {
-
-
     // Verify the signature against the signature file with special identifier.
     pub fn verify_signature(
         &self,
@@ -213,49 +216,29 @@ impl DecentralizedSecretShareLink {
     }
 
     const VERSION: SharingApiPath = SharingApiPath::V1;
-    pub fn new(
+    pub fn new<TKeyLength: ArrayLength<T>>(
         region_cluster: Option<RegionCluster>,
         bucket_guid: BucketGuid,
-        bucket_key: aes_gcm::Key<Aes256Gcm>,
+        bucket_key: impl CryptoHashDerivedKeyType<TKeyLength>,
         permission: BucketPermissionFlags,
         expires: OffsetDateTime,
+        secrete_key: ed25519_compact::SecretKey,
+        bucket_encryption_scheme: BucketEncryptionScheme,
     ) -> Self {
-        let share_token = DecentralizedSecretShareToken::new(&region_cluster, &bucket_guid, &bucket_key, &permission, &expires);
-        share_token.
-
-        let noise = Noise::from_slice(bucket_guid.as_slice()).unwrap(); // Do we even need it?
-        let signature = secret_key.sign(hash_output, Some(noise));
+        let token = DecentralizedSecretShareToken::new(&region_cluster, &bucket_guid, &bucket_key, &permission, &expires);
+        token.sign(&secrete_key, &bucket_guid);
         Self {
             scheme: Scheme::HTTPS,
-            region_cluster: Some(region_cluster),
+            region_cluster,
             version: Self::VERSION,
-
             bucket_guid,
-            bucket_encryption: BucketEncryptionScheme {},
-            bucket_key: (),
+            bucket_encryption: bucket_encryption_scheme,
+            bucket_key,
             permission,
             expires,
+            token,
             signature,
         }
-    }
-    // TODO: There is no way for the server to invalidate a secret share link.
-    /*
-    Generate a token that is used by the server to identify the link.
-    */
-    pub fn get_token(&self) -> [u8; 32] {
-        let mut hash_output = GenericArray::default();
-        let hash_output = self.compute_hash::<Sha3_224>(
-            self.region_cluster,
-            self.bucket_guid,
-            self.bucket_key,
-            self.permission,
-            self.expires,
-            &mut hash_output,
-        );
-
-        let mut output: [u8; 32] = [0; 32];
-        output.clone_from_slice(&hash_output);
-        output
     }
 }
 

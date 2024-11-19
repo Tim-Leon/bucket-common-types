@@ -40,14 +40,14 @@ impl DecentralizedShareToken {
                                &expires_at);
         assert_eq!(token.len(), 32);
         Self {
-            token: SecreteShareLinkToken(<[u8; 32]>::try_from(token.as_slice()).unwrap()),
-            region,
+            token: ShareLinkToken(<[u8; 32]>::try_from(token.as_slice()).unwrap()),
+            region: *region,
         }
     }
 
     pub fn sign(&self, secrete_key: &SecretKey, bucket_guid: &BucketGuid) -> TokenSignature {
         //let noise = Noise::from_slice(self.region);
-        let noise = Noise::from_slice(bucket_guid.as_slice()).unwrap();
+        let noise = Noise::from_slice(bucket_guid.to_bytes()).unwrap();
         TokenSignature(secrete_key.sign(&self.token.0.as_slice(),Some(noise)))
     }
 

@@ -10,7 +10,7 @@ bitflags::bitflags! {
         /// Allow operations to overwrite existing data.
         const SHOULD_OVERWRITE          = 0b0000_0010;
 
-        /// Indicates that the operation can be destructive to storage capacity of the bucket.
+        /// Indicates that the operation can be destructive to the storage capacity of the bucket.
         const IS_CAPACITY_DESTRUCTIVE   = 0b0000_0100;
 
     }

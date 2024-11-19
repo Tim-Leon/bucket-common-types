@@ -9,7 +9,7 @@ use secrecy::ExposeSecret;
 use sha3::{Digest, Sha3_256};
 use std::convert::Infallible;
 use digest::typenum;
-use pkcs8::PrivateKeyInfo;
+use pkcs8::{ObjectIdentifier, PrivateKeyInfo};
 use pkcs8::spki::AlgorithmIdentifier;
 use crate::key::{CryptoMasterKey, SecureGenericArray};
 
@@ -60,6 +60,11 @@ impl CryptoMasterKey for MasterKey256 {
 }
 
 
+#[derive(thiserror::Error, Debug)]
+pub enum MasterKey256ParseError {
+
+}
+
 
 impl TryFrom<&PasswordHash<'_>> for MasterKey256 {
     type Error = Infallible;
@@ -74,7 +79,7 @@ impl TryFrom<&PasswordHash<'_>> for MasterKey256 {
         })
     }
 }
-impl<T, TArrayLength> From<SecureGenericArray<T, TArrayLength>> for MasterKey256 {
+impl<T, TArrayLength: generic_array::ArrayLength> From<SecureGenericArray<T, TArrayLength>> for MasterKey256 {
     fn from(value: SecureGenericArray<T, TArrayLength>) -> Self {
         Self {
             secrete: value,
@@ -86,7 +91,7 @@ impl<T, TArrayLength> From<SecureGenericArray<T, TArrayLength>> for MasterKey256
 
 impl TryInto<pkcs8::PrivateKeyInfo<'_>> for MasterKey256 {
     type Error = Infallible;
-    fn try_into(self) -> Result<pkcs8::PrivateKeyInfo<'_>, Self::Error> {
+    fn try_into(self) -> Result<pkcs8::PrivateKeyInfo<'static>, Self::Error> {
         Ok(PrivateKeyInfo {
             algorithm: AlgorithmIdentifier {
                 oid: (),
@@ -98,25 +103,15 @@ impl TryInto<pkcs8::PrivateKeyInfo<'_>> for MasterKey256 {
     }
 }
 
-impl TryFrom<pkcs8::PrivateKeyInfo> for MasterKey256 {
-    type Error = Infallible;
-    fn try_from(value: pkcs8::PrivateKeyInfo) -> Result<Self, Self::Error> {
-        value.algorithm.oid
-        Ok(
-            Self {
-                secrete: SecureGenericArray::from(value.private_key),
-            }
+impl MasterKey256 {
+    pub fn oid() -> Option<ObjectIdentifier> {
+        // Example OID for the master key (custom or private)
+        Some(
+            ObjectIdentifier::new("1.3.6.1.4.1.99999.1.1").unwrap()
         )
     }
 }
 
-
-impl TryFrom<pkc1::key> for MasterKey256 {
-    type Error = Infallible;
-    fn try_from(value: pkc1::key) -> Result<Self, Self::Error> {
-
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -4,7 +4,7 @@ use aes_gcm::aead::rand_core::{CryptoRng, RngCore};
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::{DecodeError, Engine};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SecreteShareLinkToken(pub [u8; 32]);
 
 impl SecreteShareLinkToken {

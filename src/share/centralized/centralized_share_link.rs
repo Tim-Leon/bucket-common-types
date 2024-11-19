@@ -1,5 +1,4 @@
 use crate::region::RegionCluster;
-use crate::share::centralized::centralized_secrete_share_link_token::CentralizedShareLinkToken;
 use crate::share::centralized::centralized_share_link_token::CentralizedShareLinkToken;
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
 use crate::share::token_path::TokenPath;
@@ -63,7 +62,7 @@ impl TryInto<Uri> for CentralizedShareLink {
         // Create URI, handling errors with `?`
         let uri = Uri::builder()
             .scheme(Scheme::HTTPS)
-            .authority(&self.fqdn)
+            .authority(self.fqdn.to_string())
             .path_and_query(self.path.to_string())
             .build()?;
         Ok(uri)
