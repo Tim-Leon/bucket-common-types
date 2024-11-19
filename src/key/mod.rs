@@ -146,9 +146,9 @@ pub enum MasterKeyErrors {
 
 
 mod tests {
-    use rand::rngs::StdRng;
+    use rand::{rngs::{OsRng, StdRng}, SeedableRng};
 
-    use super::CryptoHashDerivedKeyType;
+    use super::{derived_key::Sha3_256CryptoHashDerivedKey, master_key::MasterKey256, CryptoHashDerivedKeyType, CryptoMasterKey};
 
     #[test]
     fn master_key_to_derived_key_test() {

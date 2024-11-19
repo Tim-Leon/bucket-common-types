@@ -151,14 +151,14 @@ mod tests {
         assert_eq!(BucketGuid::size(), 32);
     }
 
-    // Test the `as_slice` method to ensure it correctly converts to a slice of bytes
+    // Test the `to_bytes` method to ensure it correctly converts to a slice of bytes
     #[test]
-    fn test_as_slice() {
+    fn test_to_bytes() {
         let user_id = Uuid::new_v4();
         let bucket_id = Uuid::new_v4();
         let bucket_guid = BucketGuid::new(user_id, bucket_id);
 
-        let slice = bucket_guid.as_slice();
+        let slice = bucket_guid.to_bytes();
         assert_eq!(slice.len(), 32); // Ensure the slice is 32 bytes
         assert_eq!(&slice[0..16], user_id.as_bytes()); // First 16 bytes are user_id
         assert_eq!(&slice[16..32], bucket_id.as_bytes()); // Last 16 bytes are bucket_id

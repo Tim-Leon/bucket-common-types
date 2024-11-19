@@ -57,6 +57,6 @@ impl FromStr for TokenPath {
         let version = SharingApiPath::from_str(parts[0])
             .map_err(|_| PathVersionParseError::InvalidVersionFormat)?;
         // Return the successfully parsed PathVersion
-        Ok(TokenPath { version, token: ShareLinkToken::from_base64_url_safe(parts[1]).unwrap() })
+        Ok(TokenPath { version, token: ShareLinkTokens::ShareLinkToken(ShareLinkToken::from_base64_url_safe(parts[1]).unwrap()) })
     }
 }

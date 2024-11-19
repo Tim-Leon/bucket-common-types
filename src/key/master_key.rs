@@ -123,7 +123,7 @@ mod tests {
         let argon2 = Argon2::default();
         let nonce = "";
         let password = "";
-        let salt = SaltString::from();
+        let salt = SaltString::from("asd".to_string());
         let master_key_from_plaintext = MasterKey256::new(&argon2, nonce, password, salt ).unwrap();
         let master_key_from_phc = MasterKey256::from_phc_string();
     }

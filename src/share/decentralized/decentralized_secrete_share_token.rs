@@ -36,7 +36,7 @@ impl DecentralizedSecretShareToken
                 hasher.update(region_cluster.to_string());
             }
         };
-        hasher.update(bucket_guid.as_slice());
+        hasher.update(bucket_guid.to_bytes());
         hasher.update(bucket_key.as_slice());
         hasher.update(permission.bits().to_be_bytes());
         hasher.update(bincode::serialize(&expires).unwrap());
@@ -65,7 +65,7 @@ impl DecentralizedSecretShareToken
 
     pub fn sign(&self, secrete_key: &SecretKey, bucket_guid: &BucketGuid) -> TokenSignature {
         //let noise = Noise::from_slice(self.region);
-        let noise = Noise::from_slice(bucket_guid.to_bytes()).unwrap();
+        let noise = Noise::from_slice(&bucket_guid.to_bytes()).unwrap();
         TokenSignature(secrete_key.sign(&self.token.0.as_slice(),Some(noise)))
     }
 

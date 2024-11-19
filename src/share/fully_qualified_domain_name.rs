@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 /// Represents a fully qualified domain name with up to 3 levels using owned, boxed strings.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FullyQualifiedDomainName {
     pub subdomain: Option<Box<str>>,
     pub domain: Box<str>,

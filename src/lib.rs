@@ -20,7 +20,6 @@ pub mod bucket_search_query;
 #[cfg(feature = "unix_timestamp")]
 pub mod unix_timestamp;
 pub mod util;
-pub mod encryption;
 pub mod webhook;
 pub mod region;
 #[cfg(feature = "middleware")]
@@ -62,20 +61,6 @@ pub enum VideoCodec {
     H264,
 }
 
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-enum BucketAvailabilityStatus {
-    Creating,
-    Available,
-    Deleting,
-    Deleted,
-    Updating,
-    Archiving,
-    Restoring,
-    Unavailable,
-    Unreachable,
-    Corrupted,
-}
 
 #[derive(
 Debug, Clone, Eq, PartialEq, strum::EnumString, strum::Display, Serialize, Deserialize,

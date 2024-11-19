@@ -73,7 +73,6 @@ impl FromStr for BucketRelativePath {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,26 +104,62 @@ mod tests {
     fn test_path_with_invalid_characters() {
         // Path with invalid characters should return an error
         let path = BucketRelativePath::from_str("/invalid!@#$%");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathContainsInvalidCharacters));
+        assert_eq!(
+            path,
+            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
+                position: 8,
+                invalid_char: '!'
+            })
+        );
 
         // Path containing spaces
         let path = BucketRelativePath::from_str("/invalid path");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathContainsInvalidCharacters));
+        assert_eq!(
+            path,
+            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
+                position: 8,
+                invalid_char: ' '
+            })
+        );
 
         // Path with a backslash
         let path = BucketRelativePath::from_str("/invalid\\path");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathContainsInvalidCharacters));
+        assert_eq!(
+            path,
+            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
+                position: 8,
+                invalid_char: '\\'
+            })
+        );
 
         // Path with restricted patterns like ".." or "."
         let path = BucketRelativePath::from_str("/invalid/..");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathContainsInvalidCharacters));
+        assert_eq!(
+            path,
+            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
+                position: 9,
+                invalid_char: '.'
+            })
+        );
 
         let path = BucketRelativePath::from_str("/invalid/.");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathContainsInvalidCharacters));
+        assert_eq!(
+            path,
+            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
+                position: 9,
+                invalid_char: '.'
+            })
+        );
 
         // Path with colon
         let path = BucketRelativePath::from_str("/invalid:path");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathContainsInvalidCharacters));
+        assert_eq!(
+            path,
+            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
+                position: 8,
+                invalid_char: ':'
+            })
+        );
     }
 
     #[test]
@@ -136,5 +171,20 @@ mod tests {
         // Test that numbers, dashes, and underscores work together
         let path = BucketRelativePath::from_str("/path123_with-numbers_and_letters");
         assert_eq!(path, Ok(BucketRelativePath { path: "/path123_with-numbers_and_letters".to_string() }));
+    }
+
+    #[test]
+    fn test_path_too_long() {
+        // Generate a path exceeding the max length
+        let long_path = format!("/{}", "a".repeat(BUCKET_RELATIVE_PATH_MAX_LENGTH));
+        let too_long_path = format!("/{}", "a".repeat(BUCKET_RELATIVE_PATH_MAX_LENGTH + 1));
+
+        // Valid path within max length
+        let path = BucketRelativePath::from_str(&long_path);
+        assert_eq!(path, Ok(BucketRelativePath { path: long_path }));
+
+        // Path exceeding max length should return an error
+        let path = BucketRelativePath::from_str(&too_long_path);
+        assert_eq!(path, Err(BucketRelativePathParserError::RelativePathTooLong));
     }
 }

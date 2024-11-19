@@ -7,7 +7,6 @@ use secrecy::ExposeSecret;
 use sha3::digest;
 use sha3::digest::Update;
 use sha3::Sha3_256;
-use crate::encryption::EncryptionAlgorithm;
 use crate::key::{CryptoHashDerivedKeyType, CryptoMasterKey, SecureGenericArray};
 
 /// 256-bit key

@@ -20,6 +20,7 @@ use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
 use crate::region::RegionCluster;
 use crate::share::decentralized::decentralized_secrete_share_token::DecentralizedSecretShareToken;
 use crate::share::decentralized::decentralized_share_token::{DecentralizedShareToken, TokenSignature};
+use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
 use crate::share::share_link_token::ShareLinkTokens::SecreteShareLinkToken;
 use crate::share::versioning::SharingApiPath;
 use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
@@ -34,6 +35,17 @@ use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 pub struct DecentralizedSecretShareLink {
     pub scheme: Scheme,
     pub region_cluster: Option<RegionCluster>,
+    pub fqdn: FullyQualifiedDomainName,
+    pub path: DecentralizedSecretesPath,
+}
+
+#[derive(Clone, Debug)]
+pub struct DecentralizedSecretesPath {
+        // Depending on what encryption used, the bucket_key might be different.
+    // Note that the encryption algorithm chosen should have built in integrity check such as AES256-GCM to be considered fully secure or need an external source of integrity check.
+    // Only the official supported bucket encryption can be used on the website,
+    // any encryption that fal under custom will only be supported by client
+    // that has the implementation necessary.
     pub version: SharingApiPath,
     pub bucket_guid: BucketGuid,
     // Depending on what encryption used, the bucket_key might be different.
@@ -54,44 +66,25 @@ pub struct DecentralizedSecretShareLink {
     pub signature: TokenSignature,
 }
 
-
-
-
-
-
-// Hash the secret share link to get a unique identifier that is then signed with an ed22219 key to create the signature.
-// Does not include the signature in the hash.
-// https://github.com/RustCrypto/hashes
-fn hash_secret_share_link<D: Digest + OutputSizeUser>(
-    region_cluster: RegionCluster,
-    user_id: uuid::Uuid,
-    bucket_id: uuid::Uuid,
-    bucket_key: aes_gcm::Key<Aes256Gcm>,
-    permission: BucketPermissionFlags,
-    expires: OffsetDateTime,
-    output: &mut GenericArray<u8, <D as OutputSizeUser>::OutputSize>, //[u8;64],
-) {
-    let mut hasher = D::new();
-    hasher.update(region_cluster.to_string());
-    hasher.update(user_id.as_bytes());
-    hasher.update(bucket_id.as_bytes());
-    hasher.update(bucket_key.as_slice());
-    hasher.update(permission.bits().to_be_bytes());
-    hasher.update(bincode::serialize(&expires).unwrap());
-    hasher.finalize_into(output)
+impl Display for DecentralizedSecretesPath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.version, self.bucket_guid, self.expires, self.permission, self.bucket_key self.signature);
+    }
 }
+
 
 impl Display for DecentralizedSecretShareLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let region_cluster = match self.region_cluster {
-            Some(region_cluster) => { write!()},
-            None => "",
+        write!(f, "{}://",self.scheme);
+        match self.region_cluster {
+            Some(region_cluster) => { write!(f, "{}.", region_cluster)},
+            None => {},
         };
+
+
         write!(
             f,
-            "{}{}.{}/{}/{}#{}#{}#{}#{}",
-            "https://",
-            region_cluster,
+            "{}/{}/{}#{}#{}#{}#{}",
             DOMAIN_URL,
             SECRET_SHARE_PATH_URL,
             general_purpose::URL_SAFE_NO_PAD.encode(self.bucket_guid.as_slice()),
@@ -202,17 +195,8 @@ impl DecentralizedSecretShareLink {
         &self,
         public_signing_key: ed25519_compact::PublicKey,
     ) -> Result<(), SecretShareLinkVerifySignatureError> {
-        let mut hash_output = GenericArray::default(); //[0; 64];
-        self.compute_hash::<Sha3_224>(
-            self.region_cluster,
-            self.bucket_guid,
-            self.bucket_key,
-            self.permission,
-            self.expires,
-            &mut hash_output,
-        );
-        assert_eq!(hash_output.len(), 32);
-        Ok(public_signing_key.verify(hash_output, &self.signature)?)
+        self.token.verify(&public_signing_key, &self.signature)?;
+        Ok(())
     }
 
     const VERSION: SharingApiPath = SharingApiPath::V1;
@@ -239,6 +223,10 @@ impl DecentralizedSecretShareLink {
             token,
             signature,
         }
+    }
+
+    pub fn get_token(&self) -> &DecentralizedSecretShareToken {
+        &self.token
     }
 }
 

@@ -2,8 +2,6 @@ use argon2::password_hash::Salt;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use vsss_rs::{combine_shares, shamir::split_secret, Gf256};
 use rand::thread_rng;
-use crate::encryption::Argon2IdParams;
-use crate::key::{CryptoMasterKey, MasterKey256};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum VerifiableSecretSharingSchemeAlgorithm {

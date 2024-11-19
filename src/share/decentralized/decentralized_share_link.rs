@@ -46,8 +46,4 @@ impl DecentralizedShareLink {
     pub fn get_token(&self) -> DecentralizedShareToken {
         self.token.clone()
     }
-
-
-
-
 }
