@@ -1,4 +1,5 @@
 use aes_gcm::KeyInit;
+use generic_array::ArrayLength;
 use core::slice::SlicePattern;
 use std::convert::Infallible;
 use digest::{Digest, FixedOutput};
@@ -17,7 +18,7 @@ pub type CryptoHashDerivedKeySha3_256 = Sha3_256CryptoHashDerivedKey<typenum::U3
 #[derive(Clone, Debug)]
 pub struct Sha3_256CryptoHashDerivedKey<TKeyLength>
 where
-    TKeyLength: ArrayLength<T>,
+    TKeyLength: generic_array::ArrayLength,
 {
     /// The securely derived secret key.
     secret: SecureGenericArray<u8, TKeyLength>, // Match the key length dynamically
@@ -47,7 +48,7 @@ impl<TKeyLength> CryptoHashDerivedKeyType<TKeyLength> for Sha3_256CryptoHashDeri
     ///
     /// # Returns
     /// A new `HashDerivedKey` instance derived from the provided master key and nonce.
-    fn from_key_and_nonce<TInputNonceLength>(master_key: &(impl CryptoMasterKey + SlicePattern), nonce: &GenericArray<u8, TInputNonceLength>) -> Result<Self, Infallible> {
+    fn from_key_and_nonce<TInputNonceLength: ArrayLength>(master_key: &(impl CryptoMasterKey + SlicePattern), nonce: &generic_array::GenericArray<u8, TInputNonceLength>) -> Result<Self, Infallible> {
         let mut hasher = Self::CryptoHasher::default();
         hasher.update(master_key.as_slice());
         hasher.update(nonce);

@@ -4,3 +4,5 @@ pub mod decentralized_share_link;
 pub mod decentralized_secrete_share_link_url_encoded;
 pub mod decentralized_share_token;
 pub mod decentralized_secrete_share_token;
+pub mod decentralzed_share_token_signature;
+pub mod decentralized_share_tokens_union;

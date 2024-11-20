@@ -7,7 +7,6 @@ use generic_array::{ArrayLength, GenericArray};
 use secrecy::ExposeSecret;
 use std::fmt::Debug;
 use zeroize::Zeroize;
-use crate::encryption::EncryptionAlgorithm;
 
 pub mod derived_key;
 pub mod master_key;
@@ -112,6 +111,7 @@ where
 pub trait CryptoHashDerivedKeyType<TKeyLength>
 where
     TKeyLength: ArrayLength,
+    Self: SlicePattern,
 {
     /// The type of error returned by methods in this trait.
     type Error: Debug;

@@ -12,18 +12,23 @@ use ed25519_compact::Noise;
 use http::uri::Scheme;
 use sha3::{Digest, Sha3_224};
 use time::OffsetDateTime;
+use crate::bucket::bucket_feature_flags::{self, BucketFeaturesFlags};
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
-use crate::encryption::{BucketEncryptionScheme, EncryptionAlgorithm, Role};
+use crate::bucket::encryption::{BucketEncryptionScheme, EncryptionAlgorithm, Role};
 use crate::key::CryptoHashDerivedKeyType;
 use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
-use crate::region::RegionCluster;
+use crate::region::{self, RegionCluster};
 use crate::share::decentralized::decentralized_secrete_share_token::DecentralizedSecretShareToken;
-use crate::share::decentralized::decentralized_share_token::{DecentralizedShareToken, TokenSignature};
+use crate::share::decentralized::decentralized_share_token::{DecentralizedShareToken};
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
 use crate::share::share_link_token::ShareLinkTokens::SecreteShareLinkToken;
 use crate::share::versioning::SharingApiPath;
 use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
+
+use super::decentralized_secrete_share_token::DecentralizedSecreteShareTokenError;
+use super::decentralized_share_tokens_union::DecentralizedSecreteShareTokenUnion;
+use super::decentralzed_share_token_signature::DecentralizedShareTokenSignature;
 
 // https:eu-central-1.1.bucketdrive.co/share/0#user_id#bucket_id#bucket_encryption#bucket_key#permission#expires#signature
 
@@ -37,6 +42,10 @@ pub struct DecentralizedSecretShareLink {
     pub region_cluster: Option<RegionCluster>,
     pub fqdn: FullyQualifiedDomainName,
     pub path: DecentralizedSecretesPath,
+     // Token, token and signature are not encoded into the url, it's not needed. 
+     pub token: DecentralizedSecretShareToken,
+     // The signature is stored in the link. This makes sure that the link is not tampered with.
+     pub signature: DecentralizedShareTokenSignature,
 }
 
 #[derive(Clone, Debug)]
@@ -60,15 +69,11 @@ pub struct DecentralizedSecretesPath {
     pub permission: BucketPermissionFlags,
     /// For how long the signature is going to be valid
     pub expires: OffsetDateTime,
-    // Token
-    pub token: DecentralizedSecretShareToken,
-    // The signature is stored in the link. This makes sure that the link is not tampered with.
-    pub signature: TokenSignature,
 }
 
 impl Display for DecentralizedSecretesPath {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.version, self.bucket_guid, self.expires, self.permission, self.bucket_key self.signature);
+        write!(f, "{}{}/{}#{}#{}#{}#{}#{}", self.version, self.bucket_guid, self.expires, self.permission, self.bucket_key self.signature)
     }
 }
 
@@ -169,16 +174,12 @@ impl TryFrom<url::Url> for DecentralizedSecretShareLink {
         )
             .unwrap();
         Ok(Self {
-            version: 0,
-            region_cluster,
-            user_id,
-            bucket_id,
-            bucket_encryption: EncryptionAlgorithm::None,
-            bucket_key,
-            permission,
-            expires,
-            signature,
-            bucket_guid: BucketGuid {},
+            scheme: todo!(),
+            fqdn: todo!(),
+            path: todo!(),
+            token: todo!(),
+            region_cluster: todo!(),
+            signature: todo!(),
         })
     }
 }
@@ -189,40 +190,49 @@ pub enum SecretShareLinkVerifySignatureError {
     InvalidSignature(#[from] ed25519_compact::Error),
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum DecentralizedSecreteShareLinkError {
+    #[error(transparent)]
+    DecentralizedSecreteShareTokenError(#[from] DecentralizedSecreteShareTokenError),
+}
+
 impl DecentralizedSecretShareLink {
-    // Verify the signature against the signature file with special identifier.
-    pub fn verify_signature(
-        &self,
-        public_signing_key: ed25519_compact::PublicKey,
-    ) -> Result<(), SecretShareLinkVerifySignatureError> {
-        self.token.verify(&public_signing_key, &self.signature)?;
-        Ok(())
-    }
+
 
     const VERSION: SharingApiPath = SharingApiPath::V1;
-    pub fn new<TKeyLength: ArrayLength<T>>(
+    pub fn new<TKeyLength: generic_array::ArrayLength>(
         region_cluster: Option<RegionCluster>,
         bucket_guid: BucketGuid,
         bucket_key: impl CryptoHashDerivedKeyType<TKeyLength>,
         permission: BucketPermissionFlags,
         expires: OffsetDateTime,
         secrete_key: ed25519_compact::SecretKey,
-        bucket_encryption_scheme: BucketEncryptionScheme,
-    ) -> Self {
-        let token = DecentralizedSecretShareToken::new(&region_cluster, &bucket_guid, &bucket_key, &permission, &expires);
-        token.sign(&secrete_key, &bucket_guid);
-        Self {
+        bucket_encryption_scheme: &BucketEncryptionScheme,
+        bucket_feature_flags: &BucketFeaturesFlags,
+    ) -> Result<Self, DecentralizedSecreteShareLinkError> {
+        let token = DecentralizedSecretShareToken::new::<TKeyLength>(&region_cluster, &bucket_guid, &bucket_key, &permission, &expires, &bucket_feature_flags)?;
+        let token_union = DecentralizedSecreteShareTokenUnion::DecentralizedSecretShareToken(token.clone());
+        let token_signature = DecentralizedShareTokenSignature::new(&token_union, &secrete_key, &bucket_guid);
+        
+        let subdomain = match region_cluster {
+            Some(region_cluster) => Some(region_cluster.to_string().into_boxed_str()),
+            None => None,
+        };
+
+        let fqdn = FullyQualifiedDomainName {
+            subdomain: subdomain,
+            domain: Box::from(DOMAIN_NAME),
+            top_level_domain: Box::from(".co"),
+        };
+
+        Ok(Self {
             scheme: Scheme::HTTPS,
             region_cluster,
-            version: Self::VERSION,
-            bucket_guid,
-            bucket_encryption: bucket_encryption_scheme,
-            bucket_key,
-            permission,
-            expires,
+            fqdn: fqdn,
+            path: todo!(),
             token,
-            signature,
-        }
+            signature: todo!(),
+        })
     }
 
     pub fn get_token(&self) -> &DecentralizedSecretShareToken {

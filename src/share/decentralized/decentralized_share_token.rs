@@ -16,8 +16,6 @@ pub struct DecentralizedShareToken {
     pub region: Option<RegionCluster>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct TokenSignature(pub Signature);
 
 impl DecentralizedShareToken {
     pub fn hash<TDigest: Digest + OutputSizeUser>(
@@ -45,15 +43,5 @@ impl DecentralizedShareToken {
             token: ShareLinkToken(<[u8; 32]>::try_from(token.as_slice()).unwrap()),
             region: *region,
         }
-    }
-
-    pub fn sign(&self, secrete_key: &SecretKey, bucket_guid: &BucketGuid) -> TokenSignature {
-        //let noise = Noise::from_slice(self.region);
-        let noise = Noise::from_slice(&bucket_guid.to_bytes()).unwrap();
-        TokenSignature(secrete_key.sign(&self.token.0.as_slice(),Some(noise)))
-    }
-
-    pub fn verify(&self, public_key: &PublicKey, signature: &TokenSignature) -> Result<(), ed25519_compact::Error> {
-        public_key.verify(self.token.0.as_slice(), &signature.0)
     }
 }

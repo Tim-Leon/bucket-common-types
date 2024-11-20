@@ -21,6 +21,17 @@ impl BucketAbsolutePath {
         }
     }
 }
+
+pub struct BucketCommonPrefixedPath {
+    prefix: BucketAbsolutePath, 
+    paths: Vec<BucketRelativePath>,
+}
+
+/// Must contain a file
+struct BucketRelativeAbsolutePath {
+    
+}
+
 /// The relative path from the bucket guid,
 /// Every relative path starts with ``/``
 /// Only alphanumeric and numbers are allowed and "-", "_"
@@ -56,7 +67,7 @@ impl FromStr for BucketRelativePath {
         if s.len() > BUCKET_RELATIVE_PATH_MAX_LENGTH {
             return Err(BucketRelativePathParserError::RelativePathTooLong);
         }
-        let mut segments : u32 = 0;
+        let segments : u32 = 0;
         // Check for invalid characters
         for (index, c) in s.chars().enumerate() {
             if !(c.is_alphanumeric() || c == '/' || c.is_numeric() || c == '-' || c == '_') {

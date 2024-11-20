@@ -1,4 +1,4 @@
-use crate::bucket::bucket_guid::BucketGuid;
+use crate::bucket::{bucket_feature_flags::BucketFeaturesFlags, bucket_guid::BucketGuid};
 use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::key::CryptoHashDerivedKeyType;
 use crate::region::RegionCluster;
@@ -10,12 +10,17 @@ use digest::Digest;
 use ed25519_compact::{Noise, PublicKey, SecretKey};
 use generic_array::ArrayLength;
 use time::OffsetDateTime;
-use crate::share::decentralized::decentralized_share_token::TokenSignature;
 
 #[derive(Clone, Debug)]
 pub struct DecentralizedSecretShareToken {
     pub token: SecreteShareLinkToken,
     pub region: Option<RegionCluster>,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum DecentralizedSecreteShareTokenError {
+    #[error("MissingDecentralizedSharabledFromBucketFeature")]
+    MissingDecentralizedSharabledFromBucketFeature,
 }
 
 impl DecentralizedSecretShareToken
@@ -50,26 +55,20 @@ impl DecentralizedSecretShareToken
                        bucket_guid: &BucketGuid,
                        bucket_key: &impl CryptoHashDerivedKeyType<TKeyLength>,
                        permission: &BucketPermissionFlags,
-                       expires: &OffsetDateTime) -> Self{
+                       expires: &OffsetDateTime, 
+                    bucket_features_flags: &BucketFeaturesFlags) -> Result<Self, DecentralizedSecreteShareTokenError>{
+        if bucket_features_flags.contains(BucketFeaturesFlags::IS_DECENTRALIZED_SHARABLE) {
+            return Err(DecentralizedSecreteShareTokenError::MissingDecentralizedSharabledFromBucketFeature)
+        }
         let mut token = Self::hash(&region_cluster,
                                    &bucket_guid,
                                    &bucket_key.as_slice(),
                                    &permission,
                                    &expires);
-        Self {
+        Ok(Self {
             token:  SecreteShareLinkToken(<[u8; 32]>::try_from(token.as_slice()).unwrap()),
             region: region_cluster.clone(),
-        }
+        })
     }
 
-
-    pub fn sign(&self, secrete_key: &SecretKey, bucket_guid: &BucketGuid) -> TokenSignature {
-        //let noise = Noise::from_slice(self.region);
-        let noise = Noise::from_slice(&bucket_guid.to_bytes()).unwrap();
-        TokenSignature(secrete_key.sign(&self.token.0.as_slice(),Some(noise)))
-    }
-
-    pub fn verify(&self, public_key: &PublicKey, signature: &TokenSignature) -> Result<(), ed25519_compact::Error> {
-        public_key.verify(self.token.0.as_slice(), &signature.0)
-    }
 }

@@ -1,3 +1,5 @@
+pub mod version;
+
 use serde::{Deserialize, Serialize};
 use url::Url;
 

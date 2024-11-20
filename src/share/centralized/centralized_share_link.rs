@@ -125,14 +125,14 @@ mod tests {
         let parsed = FullyQualifiedDomainName::from_str(valid_fqdn);
         assert!(parsed.is_ok());
         let fqdn = parsed.unwrap();
-        assert_eq!(fqdn.domain, "example.com");
-        assert_eq!(fqdn.subdomain, Some("subdomain".to_string()));
+        assert_eq!(fqdn.domain, "example.com".into());
+        assert_eq!(fqdn.subdomain, Some("subdomain".to_string().into()));
 
         let invalid_fqdn = "example";
         let parsed_invalid = FullyQualifiedDomainName::from_str(invalid_fqdn);
         assert!(parsed_invalid.is_ok());
         let fqdn_invalid = parsed_invalid.unwrap();
-        assert_eq!(fqdn_invalid.domain, "example");
+        assert_eq!(fqdn_invalid.domain, "example".into());
         assert!(fqdn_invalid.subdomain.is_none());
 
         let empty_fqdn = "";
@@ -144,9 +144,9 @@ mod tests {
     #[test]
     fn test_centralized_secret_share_link_token_urlencoded_v1_conversion() {
         let token = CentralizedShareLinkToken {
-            token: "test_token".to_string(),
+            token: "test_token".to_string().into(),
             region: Some(RegionCluster {
-                region: "us-west".to_string(),
+                region: "us-west".to_string().into(),
             }),
         };
 
@@ -161,9 +161,9 @@ mod tests {
     #[test]
     fn test_centralized_secrete_share_link_token_urlencoded_v1_to_uri() {
         let token = CentralizedShareLinkToken {
-            token: "test_token".to_string(),
+            token: "test_token".to_string().into(),
             region: Some(RegionCluster {
-                region: "us-west".to_string(),
+                region: "us-west".to_string().into(),
             }),
         };
 

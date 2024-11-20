@@ -3,11 +3,7 @@ use std::fmt::{Display, Formatter};
 use crate::share::decentralized::decentralized_secrete_share_link_url_encoded::DecentralizedSecretShareLink;
 use crate::share::decentralized::decentralized_share_link::DecentralizedShareLink;
 
-// Just an enum used to store share link.
-pub enum ExclusiveShareLinkUrlEncoded {
-    ShareLink(DecentralizedShareLink),
-    SecretShareLink(DecentralizedSecretShareLink),
-}
+
 
 pub enum ShareLink {
     UrlEncodedShareLink(DecentralizedShareLink),
