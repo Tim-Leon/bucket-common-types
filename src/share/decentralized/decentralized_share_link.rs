@@ -7,10 +7,10 @@ use time::OffsetDateTime;
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::region::RegionCluster;
-use crate::share::decentralized::decentralized_share_token::{DecentralizedShareToken};
+use crate::share::decentralized::decentralized_share_token::DecentralizedShareToken;
 use crate::share::versioning::SharingApiPath;
 
-use super::decentralized_share_tokens_union::DecentralizedSecreteShareTokenUnion;
+use super::decentralized_share_tokens_union::DecentralizedSecretShareTokenUnion;
 use super::decentralzed_share_token_signature::DecentralizedShareTokenSignature;
 
 /// All the information is encoded into a URL, Note that differing from the SecreteShareLinkUrlEncoded, this does not contain an encryption key.
@@ -35,7 +35,7 @@ impl DecentralizedShareLink {
     const VERSION: SharingApiPath = SharingApiPath::V1;
     pub fn new(region: Option<RegionCluster>, bucket_guid: BucketGuid, expires: OffsetDateTime, permission: BucketPermissionFlags ,secret_signing_key: &ed25519_compact::SecretKey) -> Result<Self, Infallible> {
         let token = DecentralizedShareToken::new(&bucket_guid, &permission, &expires, &region);
-        let token_union =  DecentralizedSecreteShareTokenUnion::DecentralizedShareToken(token.clone());
+        let token_union =  DecentralizedSecretShareTokenUnion::DecentralizedShareToken(token.clone());
         let token_signature = DecentralizedShareTokenSignature::new(&token_union, &secret_signing_key, &bucket_guid).unwrap(); 
         Ok(Self {
             scheme: Scheme::HTTPS,

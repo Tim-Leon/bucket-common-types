@@ -1,5 +1,5 @@
-use core::range::Range;
 use time::OffsetDateTime;
+use std::ops::Range;
 
 /// CAS
 /// Compare and swap os usually the conditional part of a request that must be met inorder for  the request to be able to be completed.
@@ -14,7 +14,7 @@ pub enum BucketHash {
 
 pub struct DataForRange {
     /// Byte range to compare against.
-    range: Range<u32>,
+    range: Range<usize>,
     /// You are only able to do 1 Kbyte of compare and swap for data.
     data: Vec<u8>,
 }

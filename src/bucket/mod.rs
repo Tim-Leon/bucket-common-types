@@ -9,4 +9,3 @@ pub mod storage_operation_behavior_flags;
 pub mod bucket_limits;
 pub mod conditional_requests;
 pub mod encryption;
-pub mod common_prefix;

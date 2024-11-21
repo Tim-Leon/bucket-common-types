@@ -3,7 +3,6 @@ use generic_array::ArrayLength;
 use core::slice::SlicePattern;
 use std::convert::Infallible;
 use digest::{Digest, FixedOutput};
-use digest::generic_array::{typenum, GenericArray, ArrayLength};
 use secrecy::ExposeSecret;
 use sha3::digest;
 use sha3::digest::Update;
@@ -16,7 +15,7 @@ pub type CryptoHashDerivedKeySha3_256 = Sha3_256CryptoHashDerivedKey<typenum::U3
 
 /// Represents a derived encryption key generated from a master key and nonce.
 #[derive(Clone, Debug)]
-pub struct Sha3_256CryptoHashDerivedKey<TKeyLength>
+pub struct Sha3_256CryptoHashDerivedKey<generic_array::typenum::U32>
 where
     TKeyLength: generic_array::ArrayLength,
 {

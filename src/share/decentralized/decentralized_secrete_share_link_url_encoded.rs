@@ -27,7 +27,7 @@ use crate::share::versioning::SharingApiPath;
 use crate::util::{DOMAIN_NAME, DOMAIN_URL, SECRET_SHARE_PATH_URL};
 
 use super::decentralized_secrete_share_token::DecentralizedSecreteShareTokenError;
-use super::decentralized_share_tokens_union::DecentralizedSecreteShareTokenUnion;
+use super::decentralized_share_tokens_union::DecentralizedSecretShareTokenUnion;
 use super::decentralzed_share_token_signature::DecentralizedShareTokenSignature;
 
 // https:eu-central-1.1.bucketdrive.co/share/0#user_id#bucket_id#bucket_encryption#bucket_key#permission#expires#signature
@@ -42,10 +42,10 @@ pub struct DecentralizedSecretShareLink {
     pub region_cluster: Option<RegionCluster>,
     pub fqdn: FullyQualifiedDomainName,
     pub path: DecentralizedSecretesPath,
-     // Token, token and signature are not encoded into the url, it's not needed. 
-     pub token: DecentralizedSecretShareToken,
-     // The signature is stored in the link. This makes sure that the link is not tampered with.
-     pub signature: DecentralizedShareTokenSignature,
+    // Token, token and signature are not encoded into the url, it's not needed. 
+    pub token: DecentralizedSecretShareToken,
+    // The signature is stored in the link. This makes sure that the link is not tampered with.
+    pub signature: DecentralizedShareTokenSignature,
 }
 
 #[derive(Clone, Debug)]
@@ -71,9 +71,23 @@ pub struct DecentralizedSecretesPath {
     pub expires: OffsetDateTime,
 }
 
+pub struct DecentralizedPath {
+    pub version: SharingApiPath, 
+    pub bucket_guid: BucketGuid, 
+    pub bucket_encryption: BucketEncryptionScheme, 
+    pub permission: BucketPermissionFlags, 
+    pub expires: OffsetDateTime,
+}
+
 impl Display for DecentralizedSecretesPath {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}/{}#{}#{}#{}#{}#{}", self.version, self.bucket_guid, self.expires, self.permission, self.bucket_key self.signature)
+        write!(f, "{}{}/{}#{}#{}#{}", 
+        self.version,
+         self.bucket_guid, 
+         general_purpose::URL_SAFE_NO_PAD.encode(&self.expires), 
+         general_purpose::URL_SAFE_NO_PAD.encode(&self.permission), 
+         general_purpose::URL_SAFE_NO_PAD.encode(&self.bucket_key),
+         general_purpose::URL_SAFE_NO_PAD.encode(&self.signature))
     }
 }
 
@@ -211,7 +225,7 @@ impl DecentralizedSecretShareLink {
         bucket_feature_flags: &BucketFeaturesFlags,
     ) -> Result<Self, DecentralizedSecreteShareLinkError> {
         let token = DecentralizedSecretShareToken::new::<TKeyLength>(&region_cluster, &bucket_guid, &bucket_key, &permission, &expires, &bucket_feature_flags)?;
-        let token_union = DecentralizedSecreteShareTokenUnion::DecentralizedSecretShareToken(token.clone());
+        let token_union = DecentralizedSecretShareTokenUnion::DecentralizedSecretShareToken(token.clone());
         let token_signature = DecentralizedShareTokenSignature::new(&token_union, &secrete_key, &bucket_guid);
         
         let subdomain = match region_cluster {
