@@ -17,7 +17,8 @@ unix_timestamp = []
 middleware = []
 # Features for creating MasterKey, and DerivedKey.
 key = ["argon2", "secrecy", "vsss-rs/default", "generic-array" ]
-
+# Lock the memory, used for encrypiton keys, so they aren't moved to disk if we run out of memory.
+lock_memory = []
 client_side_encryption = []
 server_side_encryption = []
 [dependencies]
@@ -43,7 +44,7 @@ convert_case = "0.6.0"
 prost-types = "0.13.1"
 logos = "0.14.0"
 pbkdf2 = "0.12.2"
-generic-array = { version = "1.1.0", optional  = true }
+generic-array = { version = "1.1.0", optional  = true, features = ["zeroize"] }
 argon2 = {version =  "*", optional = true }
 zeroize = {version =  "1.8.1", features = ["derive", "simd"] }
 secrecy = { version = "0.10.3", optional = true }
@@ -54,6 +55,7 @@ mime = "0.3.17"
 http = "1.1.0"
 tonic = "0.12.3"
 reqwest = "0.12.9"
+region = "3.0.2"
 # Laungauge supports?
 rust-i18n = "3.1.2"
 oid-registry = "0.7.1"

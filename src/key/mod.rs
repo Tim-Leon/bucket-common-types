@@ -1,6 +1,7 @@
 use argon2::password_hash::SaltString;
 use argon2::Argon2;
 use core::slice::SlicePattern;
+use std::hash::Hash;
 use digest::{Digest, FixedOutput};
 use generic_array::typenum::IsGreaterOrEqual;
 use generic_array::{ArrayLength, GenericArray};
@@ -11,29 +12,9 @@ use zeroize::Zeroize;
 pub mod derived_key;
 pub mod master_key;
 pub mod nonce_generator;
-mod shard_master_key_generator;
+pub mod shard_master_key_generator;
+pub mod memory;
 
-/// TODO: implement DER encoding.
-
-/// A secure wrapper around a generic array of secrets. TODO: disable memory swap for this memory in linux and windows.
-#[derive(Zeroize)]
-pub struct SecureGenericArray<T, TLength: ArrayLength>(pub Secret<GenericArray<T, TLength>>)
-where
-    generic_array::GenericArray<T, TLength>: Zeroize;
-
-
-// TODO: Maybe remove cause it kinda defeats the purpose of Secret struct specifically the traits it implements to easily audit code for exposed secretes.
-impl<T, TLength: ArrayLength> SlicePattern for SecureGenericArray<T, TLength>
-where
-    generic_array::GenericArray<T, TLength>: Zeroize,
-{
-    type Item = T;
-
-    /// Returns a slice of the underlying secret data.
-    fn as_slice(&self) -> &[Self::Item] {
-        self.0.expose_secret().as_slice()
-    }
-}
 pub struct Nonce<TNonceLength: ArrayLength>(GenericArray<u8, TNonceLength>);
 
 /// A trait for generating nonce's of a specified length,
@@ -112,6 +93,7 @@ pub trait CryptoHashDerivedKeyType<TKeyLength>
 where
     TKeyLength: ArrayLength,
     Self: SlicePattern,
+    Self: Hash,
 {
     /// The type of error returned by methods in this trait.
     type Error: Debug;

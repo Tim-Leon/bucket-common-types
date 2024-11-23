@@ -1,6 +1,3 @@
-#[cfg(feature = "secret_share_link")]
-#[cfg(feature = "share_link")]
-pub mod exclusive_share_link;
 pub mod versioning;
 pub mod centralized;
 pub mod decentralized;

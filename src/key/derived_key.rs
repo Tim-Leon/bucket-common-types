@@ -12,7 +12,6 @@ use crate::key::{CryptoHashDerivedKeyType, CryptoMasterKey, SecureGenericArray};
 /// 256-bit key
 pub type CryptoHashDerivedKeySha3_256 = Sha3_256CryptoHashDerivedKey<typenum::U32>;
 
-
 /// Represents a derived encryption key generated from a master key and nonce.
 #[derive(Clone, Debug)]
 pub struct Sha3_256CryptoHashDerivedKey<generic_array::typenum::U32>

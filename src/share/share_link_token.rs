@@ -54,28 +54,28 @@ impl ShareLinkToken {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ShareLinkTokens {
+pub enum ShareLinkTokenUnion {
     /// Used with decentralized sharing, key information and such are not stored on the server but are instead encoded into the URL, and our server has no clue about the URL.
     SecreteShareLinkToken(SecreteShareLinkToken),
     /// Used with centralized sharing, all info is available to the server.
     ShareLinkToken(ShareLinkToken),
 }
 
-impl ShareLinkTokens {
+impl ShareLinkTokenUnion {
     pub fn to_base64_url_safe(&self) -> String {
         match self {
-            ShareLinkTokens::SecreteShareLinkToken(token) => token.to_base64_url_safe(),
-            ShareLinkTokens::ShareLinkToken(token) => token.to_base64_url_safe(),
+            ShareLinkTokenUnion::SecreteShareLinkToken(token) => token.to_base64_url_safe(),
+            ShareLinkTokenUnion::ShareLinkToken(token) => token.to_base64_url_safe(),
         }
     }
 
     pub fn from_base64_url_safe(encoded: &str, is_secret: bool) -> Result<Self, DecodeError> {
         if is_secret {
             let token = SecreteShareLinkToken::from_base64_url_safe(encoded)?;
-            Ok(ShareLinkTokens::SecreteShareLinkToken(token))
+            Ok(ShareLinkTokenUnion::SecreteShareLinkToken(token))
         } else {
             let token = ShareLinkToken::from_base64_url_safe(encoded)?;
-            Ok(ShareLinkTokens::ShareLinkToken(token))
+            Ok(ShareLinkTokenUnion::ShareLinkToken(token))
         }
     }
 }

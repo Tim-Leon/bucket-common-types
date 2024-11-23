@@ -1,7 +1,7 @@
 #![feature(slice_pattern)]
 #![feature(slice_split_once)]
 #![feature(associated_type_defaults)]
-#![feature(new_range_api)]
+#![feature(allocator_api)]
 extern crate core;
 
 use core::slice::SlicePattern;

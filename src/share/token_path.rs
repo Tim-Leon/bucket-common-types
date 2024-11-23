@@ -3,13 +3,13 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use crate::share::share_link_token::{ShareLinkToken, ShareLinkTokens};
+use crate::share::share_link_token::{ShareLinkToken, ShareLinkTokenUnion};
 use crate::share::versioning::SharingApiPath;
 
 /// path/version/token, serialize and deserializer.
 pub struct TokenPath {
     pub version: SharingApiPath,
-    pub token: ShareLinkTokens,
+    pub token: ShareLinkTokenUnion,
 }
 
 impl Display for TokenPath {
@@ -57,6 +57,6 @@ impl FromStr for TokenPath {
         let version = SharingApiPath::from_str(parts[0])
             .map_err(|_| PathVersionParseError::InvalidVersionFormat)?;
         // Return the successfully parsed PathVersion
-        Ok(TokenPath { version, token: ShareLinkTokens::ShareLinkToken(ShareLinkToken::from_base64_url_safe(parts[1]).unwrap()) })
+        Ok(TokenPath { version, token: ShareLinkTokenUnion::ShareLinkToken(ShareLinkToken::from_base64_url_safe(parts[1]).unwrap()) })
     }
 }

@@ -1,16 +1,14 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::num::ParseIntError;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use strum::EnumIter;
-use crate::util::DOMAIN_URL;
+use strum::{EnumIter, EnumString};
 
-// Inspired https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
-//strum::EnumString strum::Display
-// TODO remove strum serialize?
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter, Copy)]
-pub enum BucketRegion {
+/// 3 Characters at a maximum
+const REGION_ID_MAX_LENGTH: usize = 3;
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter, EnumString, Copy, strum::Display, Hash)]
+pub enum Region {
     #[strum(serialize = "eu-central")]
     EuropeCentral,
     #[strum(serialize = "eu-north")]
@@ -65,6 +63,7 @@ pub enum BucketRegion {
     MiddleEastWest,
     #[strum(serialize = "me-east")]
     MiddleEastEast,
+
     #[strum(serialize = "sa-central")]
     SouthAmericaCentral,
     #[strum(serialize = "sa-north")]
@@ -77,16 +76,16 @@ pub enum BucketRegion {
     SouthAmericaEast,
 }
 
-
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct DatacenterRegion {
-    region: BucketRegion,
-    region_id: u32,
+    region: Region,
+    id: Box<str>,
 }
 
-//eu-central-1
+// Implementing Display trait for DatacenterRegion
 impl Display for DatacenterRegion {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}-{}", self.region, self.region_id)
+        write!(f, "{}-{}", self.region, self.id)
     }
 }
 
@@ -94,76 +93,75 @@ impl FromStr for DatacenterRegion {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let p = s.splitn(3,"-");
-        todo!()
+        let parts: Vec<&str> = s.splitn(2, '-').collect();
+        if parts.len() != 2 {
+            return Err(());
+        }
+
+        // Parse the region string to the corresponding enum variant
+        let region_str = parts[0];
+        let region = region_str.parse().map_err(|_| ())?;
+
+        // Check the ID length and convert to Box<str>
+        let id = parts[1];
+        if id.len() > REGION_ID_MAX_LENGTH {
+            return Err(());
+        }
+
+        Ok(DatacenterRegion {
+            region,
+            id: id.into(),
+        })
     }
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-pub type ClusterId = u32;
+    // Test for valid region and ID string parsing
+    #[test]
+    fn test_valid_datacenter_region() {
+        let input = "eu-central-001";
+        let result = DatacenterRegion::from_str(input);
+        assert!(result.is_ok());
+        let datacenter_region = result.unwrap();
+        assert_eq!(datacenter_region.region, Region::EuropeCentral);
+        assert_eq!(datacenter_region.id, "001".into());
+    }
 
+    // Test for invalid region string (non-existent region)
+    #[test]
+    fn test_invalid_region() {
+        let input = "invalid-region-001";
+        let result = DatacenterRegion::from_str(input);
+        assert!(result.is_err());
+    }
 
-/// Contains region and cluster information.
-/// Used in the subdomain to be used by DNS to resolve the ip address of that specific cluster.
-/// BucketRegion field denoting the region.
-/// And ClusterId referring to a specific cluster in the region.
-#[derive(PartialEq, Debug, Clone, Copy, Eq)]
-pub struct RegionCluster {
-    pub region: BucketRegion,
-    pub cluster_id: ClusterId,
-}
+    // Test for ID length exceeding the maximum allowed
+    #[test]
+    fn test_id_too_long() {
+        let input = "eu-central-1234";
+        let result = DatacenterRegion::from_str(input);
+        assert!(result.is_err());
+    }
 
-impl Display for RegionCluster {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}-{}", self.region, self.cluster_id)
+    // Test for valid region string and invalid format (missing ID)
+    #[test]
+    fn test_missing_id() {
+        let input = "eu-central";
+        let result = DatacenterRegion::from_str(input);
+        assert!(result.is_err());
+    }
+
+    // Test for Display trait
+    #[test]
+    fn test_display_trait() {
+        let datacenter_region = DatacenterRegion {
+            region: Region::EuropeCentral,
+            id: "001".into(),
+        };
+        assert_eq!(datacenter_region.to_string(), "eu-central-001");
     }
 }
-
-impl RegionCluster {
-    pub fn to_url(&self) -> url::Url {
-        url::Url::from_str(format!("{}.{}", self.to_string(), DOMAIN_URL).as_str()).unwrap()
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum RegionClusterParsingError {
-    #[error("Invalid region or cluster ID format")]
-    InvalidFormat,
-    #[error("Failed to parse cluster ID")]
-    FailedToParseClusterId(#[from] ParseIntError),
-    #[error("Invalid Region")]
-    InvalidRegion(#[from] strum::ParseError),
-    //#[error(transparent)]
-    //FiledToParseBucketRegion(#[from] BucketRegionError),
-}
-/*
-* Region is the location/zone of resource
-* ClusterId is which one of the clusters inside of that Region. Users can be ensured that the interlinking between clusters id in the same region are at high speed.
-* The region id and the cluster id are not the same.
-* Example:
-* eu-center-1-1
- */
-impl FromStr for RegionCluster {
-    type Err = RegionClusterParsingError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        //let mut split = s.splitn(4,'-');
-        //let region = split
-        //    .next()
-        //    .ok_or(RegionClusterParsingError::InvalidFormat)?;
-        //let direction = split.next().unwrap();
-        //let datacenter_id = split.next().unwrap();
-        //let region_parsed = format!("{}-{}-{}", region, direction, datacenter_id).parse::<BucketRegion>()?;
-        //let cluster_id = split
-        //    .next()
-        //    .ok_or(RegionClusterParsingError::InvalidFormat)?
-        //    .parse()?;
-        //Ok(RegionCluster {
-        //    region: region_parsed,
-        //    cluster_id,
-        //})
-        todo!()
-    }
-}
-

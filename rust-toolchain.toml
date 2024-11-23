@@ -1,5 +1,17 @@
 [toolchain]
-channel = "nightly-2024-07-01" # voprf library breaks on newer releases );
-components = ["miri", "rustfmt", "clippy", "cargo-watch"]
-targets = []
-profile = "default"
+channel = "nightly-2024-07-01" # voprf library breaks on newer releases 
+components = ["cargo", "rustfmt", "clippy"]  # Common components for all developers
+targets = [
+    "x86_64-pc-windows-msvc",  # Windows target
+    "x86_64-unknown-linux-gnu",  # Linux target
+    "x86_64-apple-darwin",  # macOS target
+    "wasm32-unknown-unknown"  # WASM target
+]
+profile = "default" # Default profile targeted for development
+
+[toolchain.profiles]
+# Define the "ci" profile, which is used for CI/CD or production
+ci = { components = ["cargo-watch"], targets = [] }
+
+# Define a "defualt" profile used for developement.
+defualt = { components = ["rustfmt", "clippy", "cargo-watch", "miri", "rust-analyzer"] }

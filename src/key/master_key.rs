@@ -11,7 +11,7 @@ use std::convert::Infallible;
 use digest::typenum;
 use pkcs8::{ObjectIdentifier, PrivateKeyInfo};
 use pkcs8::spki::AlgorithmIdentifier;
-use crate::key::{CryptoMasterKey, SecureGenericArray};
+use crate::key::{CryptoMasterKey};
 
 pub struct MasterKey256 {
     pub secrete: SecureGenericArray<u8, typenum::U32>,

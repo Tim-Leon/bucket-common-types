@@ -28,13 +28,17 @@ pub enum EncryptionAlgorithm {
 
 
 impl EncryptionAlgorithm {
-    fn oid() -> Option<ObjectIdentifier> {
-        match Self {
-            EncryptionAlgorithm::None => { None }
-            EncryptionAlgorithm::AES256 => { Some(ObjectIdentifier::new("2.16.840.1.101.3.4.1.46").unwrap()) }
-            EncryptionAlgorithm::ChaCha20Poly1305 => { None }
-            EncryptionAlgorithm::XChaCha20Poly1305 => { None }
-            EncryptionAlgorithm::Custom(_) => { None }
+    // Define constants for OIDs
+    const AES256_OID: &'static str = "2.16.840.1.101.3.4.1.46";
+
+    // Use a normal function instead of const fn
+    pub fn oid(&self) -> Option<&'static str> {
+        match self {
+            EncryptionAlgorithm::None => None,
+            EncryptionAlgorithm::AES256 => Some(Self::AES256_OID),
+            EncryptionAlgorithm::ChaCha20Poly1305 => None,
+            EncryptionAlgorithm::XChaCha20Poly1305 => None,
+            EncryptionAlgorithm::Custom(_) => None,
         }
     }
 }

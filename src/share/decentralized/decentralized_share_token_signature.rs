@@ -1,8 +1,11 @@
+use core::slice::SlicePattern;
 use std::convert::Infallible;
 
 use ed25519_compact::{Noise, PublicKey, SecretKey, Signature};
 
-use crate::{bucket::bucket_guid::BucketGuid, share::{decentralized::decentralized_share_tokens_union::DecentralizedSecretShareTokenUnion, share_link_token::ShareLinkToken}};
+use crate::{bucket::bucket_guid::BucketGuid, share::share_link_token::ShareLinkToken};
+
+use super::decentralized_share_token::DecentralizedSecretShareToken;
 
 
 #[derive(thiserror::Error, Debug)]
@@ -14,25 +17,24 @@ pub enum DecentralizedShareTokenSignatureError {
     FailedToParseSlice(#[source] ed25519_compact::Error),
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct DecentralizedShareTokenSignature(pub Signature);
 
 impl DecentralizedShareTokenSignature {
     pub fn new(
-        token: &DecentralizedSecretShareTokenUnion,
+        token: &DecentralizedSecretShareToken,
         secret_key: &SecretKey,
         bucket_guid: &BucketGuid,
     ) -> Result<Self, DecentralizedShareTokenSignatureError> {
         let noise = Noise::from_slice(&bucket_guid.to_bytes())
             .map_err(DecentralizedShareTokenSignatureError::FailedToCreateNoise)?;
-        match token {
-            DecentralizedSecretShareTokenUnion::DecentralizedShareToken(dst) => {
-                Ok(Self(secret_key.sign(dst.0.as_slice(), Some(noise))))
+        let siganture = secret_key.sign(token.as_slice(), Some(noise));
+        
+        Ok(
+            Self {
+                0: siganture
             }
-            DecentralizedSecretShareTokenUnion::DecentralizedSecretShareToken(dsst) => {
-                Ok(Self(secret_key.sign(dsst.0.as_slice(), Some(noise))))
-            }
-        }
+        )
     }
 
     pub fn from_slice(signature: &[u8]) -> Result<Self, DecentralizedShareTokenSignatureError> {
