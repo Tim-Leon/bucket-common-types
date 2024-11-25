@@ -1,10 +1,9 @@
 use generic_array::{typenum::IsGreaterOrEqual, ArrayLength, GenericArray};
-use vsss_rs::elliptic_curve::bigint;
 use zeroize::Zeroize;
 
 use crate::bucket::bucket_guid::BucketGuid;
 
-use super::{DeterministicNonceGenerator, Nonce, NonceGenerator};
+use super::{Nonce, NonceGenerator};
 
 /// 96-bit random sequential generator.
 /// Generates a random cryptographically secure nonce.
@@ -42,9 +41,9 @@ pub struct DeterministicHashSequentialNonceGenerator {
 
 impl DeterministicHashSequentialNonceGenerator {
     pub fn new(val: &BucketGuid) -> Self {
-        
+        let bytes = val.to_bytes();
         Self {
-            seed: todo!(),
+            seed: u128::from_be_bytes(bytes[..16].try_into().unwrap()),
         }
     }
 }
@@ -55,6 +54,13 @@ TNonceLength: ArrayLength,
 TNonceLength: IsGreaterOrEqual<generic_array::typenum::U8> {
     
     fn next(&mut self) -> Nonce<TNonceLength> {
-        
+        let mut nonce = GenericArray::default();
+        // Use first 8 bytes of seed for first part of nonce
+        nonce[0..8].copy_from_slice(&(self.seed as u64).to_be_bytes());
+        // Use second 8 bytes of seed for second part
+        nonce[8..16].copy_from_slice(&((self.seed >> 64) as u64).to_be_bytes());
+        // Increment seed for next nonce
+        self.seed = self.seed.wrapping_add(1);
+        Nonce(nonce)
     }
-} 
+}

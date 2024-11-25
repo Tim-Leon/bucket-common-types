@@ -9,15 +9,13 @@ impl TryFrom<&str> for BearerToken {
     type Error = ();
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Ok(Self {
-            0: value.to_string(),
-        })
+        Ok(Self(value.to_string()))
     }
 }
 
 impl From<JwtToken> for BearerToken {
     fn from(value: JwtToken) -> Self {
-        Self { 0: value }
+        Self(value)
     }
 }
 

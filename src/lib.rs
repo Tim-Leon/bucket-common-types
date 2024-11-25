@@ -4,15 +4,8 @@
 #![feature(allocator_api)]
 extern crate core;
 
-use core::slice::SlicePattern;
-use serde::de::Expected;
-use serde::{Deserialize, Serialize, Serializer};
-use std::fmt::{Debug, LowerExp};
-use std::{
-    fmt::Display,
-    str::FromStr,
-};
-use strum::IntoEnumIterator;
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
 
 #[cfg(feature = "search_query")]
@@ -124,7 +117,7 @@ pub enum DownloadFormat {
 #[cfg(test)]
 mod tests {
     use crate::bucket::bucket_guid::BucketGuid;
-    use super::*;
+    
 
     #[test]
     fn test_bucket_guid_display() {

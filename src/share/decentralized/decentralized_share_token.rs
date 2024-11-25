@@ -34,7 +34,7 @@ impl DecentralizedSecretShareToken {
     pub fn hash<TDigest: Digest + OutputSizeUser>(
         region_cluster: &Option<DatacenterRegion>,
         bucket_guid: &BucketGuid,
-        secret_key: &DerivedKey,
+        secret_key: &Option<DerivedKey>,
         permission: &BucketPermissionFlags,
         expires: &OffsetDateTime,
     ) -> Result<GenericArray<u8, TDigest::OutputSize>, bincode::Error>
@@ -44,7 +44,12 @@ impl DecentralizedSecretShareToken {
             hasher.update(region.to_string());
         }
         hasher.update(bucket_guid.to_bytes());
-        hasher.update(secret_key.key.expose_secret());
+        match secret_key {
+            Some(secret_key) =>  {
+                hasher.update(secret_key.key.expose_secret());
+            },
+            None => { },
+        };
         hasher.update(permission.bits().to_be_bytes());
         hasher.update(bincode::serialize(expires)?);
         Ok(hasher.finalize())
@@ -54,7 +59,7 @@ impl DecentralizedSecretShareToken {
     pub fn new<TDigest, TKeyLength>(
         region_cluster: &Option<DatacenterRegion>,
         bucket_guid: &BucketGuid,
-        secret_key: &DerivedKey,
+        secret_key: &Option<DerivedKey>,
         permission: &BucketPermissionFlags,
         expires: &OffsetDateTime,
         bucket_features_flags: &BucketFeaturesFlags,

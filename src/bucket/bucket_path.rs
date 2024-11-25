@@ -1,6 +1,5 @@
 use crate::bucket::bucket_guid::BucketGuid;
 use std::fmt::Debug;
-use std::fmt::Display;
 use std::str::FromStr;
 
 // Path implementation for bucket.

@@ -28,7 +28,7 @@ impl TryInto<prost_types::Timestamp> for UnixTimestamp {
 
     fn try_into(self) -> Result<prost_types::Timestamp, Self::Error> {
         let temp = SystemTime::from(self.0);
-        let result: Timestamp = Timestamp::try_from(temp).unwrap();
+        let result: Timestamp = Timestamp::from(temp);
         Ok(result)
     }
 }
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn test_from_into_conversions() {
         let time: UnixTimestamp = UnixTimestamp::default();
-        let prost: Timestamp = time.clone().try_into().unwrap();
+        let prost: Timestamp = time.try_into().unwrap();
         let time2 = UnixTimestamp::try_from(prost).unwrap();
         assert_eq!(time, time2)
     }

@@ -1,39 +1,45 @@
 
-use argon2::password_hash::{Salt, SaltString};
-use argon2::{Argon2, PasswordHash, PasswordHasher};
-use rand::CryptoRng;
-use core::slice::SlicePattern;
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
 //use hex_literal::hex;
-use digest::generic_array::{ArrayLength, GenericArray};
-use secrecy::ExposeSecret;
 use sha3::{Digest, Sha3_256};
-use std::convert::Infallible;
 use digest::typenum;
-use pkcs8::{ObjectIdentifier, PrivateKeyInfo};
-use pkcs8::spki::AlgorithmIdentifier;
+use pkcs8::ObjectIdentifier;
 use super::memory::secure_generic_array::SecreteGenericArray;
 
 pub struct MasterKey256 {
     pub key: SecreteGenericArray<u8, typenum::U32>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum MasterKey256Error {
+    #[error("Failed to encode salt as base64")]
+    SaltEncodingError,
+    #[error("Argon2 error")]
+    PasswordHashError(argon2::password_hash::Error),
+}
 
 impl MasterKey256 {
-
-    fn new(argon2: &Argon2, password: impl AsRef<[u8]>, salt: SaltString) -> Result<Self, Infallible>
+    fn new(argon2: &Argon2, password: impl AsRef<[u8]>, salt: SaltString)
+        -> Result<Self, MasterKey256Error>
     where
         Self: Sized
     {
-        let mut hasher = Self::CryptoHasher::new();
-        hasher.update(salt);
+        let mut hasher = Sha3_256::new();
+        hasher.update(salt.as_salt().as_str().as_bytes());
         let mac = hasher.finalize();
+        
+        let salt_string = SaltString::encode_b64(&mac)
+            .map_err(|_| MasterKey256Error::SaltEncodingError)?;
         let password_hash = argon2
-            .hash_password(password.as_ref(),  mac.as_slice())?;
+            .hash_password(password.as_ref(), &salt_string)
+            .map_err(MasterKey256Error::PasswordHashError)?;
+            
         debug_assert_eq!(password_hash.hash.unwrap().as_bytes().len(), 32);
-        let key = SecreteGenericArray::new(password_hash.hash.unwrap().as_bytes()); 
-        Ok(MasterKey256 {
-            key,
-        })
+        let key = SecreteGenericArray::new(
+            generic_array::GenericArray::from_slice(password_hash.hash.unwrap().as_bytes()).to_owned()
+        );
+        Ok(MasterKey256 { key })
     }
 }
 
@@ -42,19 +48,19 @@ pub enum MasterKey256ParseError {
 
 }
 
-impl TryInto<pkcs8::PrivateKeyInfo<'_>> for MasterKey256 {
-    type Error = Infallible;
-    fn try_into(self) -> Result<pkcs8::PrivateKeyInfo<'static>, Self::Error> {
-        Ok(PrivateKeyInfo {
-            algorithm: AlgorithmIdentifier {
-                oid: (),
-                parameters: None,
-            },
-            private_key: &self.secrete.0,
-            public_key: None,
-        })
-    }
-}
+//impl TryInto<pkcs8::PrivateKeyInfo<'_>> for MasterKey256 {
+//    type Error = Infallible;
+//    fn try_into(self) -> Result<pkcs8::PrivateKeyInfo<'static>, Self::Error> {
+//        Ok(PrivateKeyInfo {
+//            algorithm: AlgorithmIdentifier {
+//                oid: (),
+//                parameters: None,
+//            },
+//            private_key: self.key.0.expose_secret(),
+//            public_key: None,
+//        })
+//    }
+//}
 
 impl MasterKey256 {
     pub fn oid() -> Option<ObjectIdentifier> {

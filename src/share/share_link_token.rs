@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-use std::str::FromStr;
 use aes_gcm::aead::rand_core::{CryptoRng, RngCore};
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::{DecodeError, Engine};
@@ -15,7 +13,7 @@ impl SecreteShareLinkToken {
         Self(token)
     }
     pub fn to_base64_url_safe(&self) -> String {
-        URL_SAFE_NO_PAD.encode(&self.0)
+        URL_SAFE_NO_PAD.encode(self.0)
     }
 
     pub fn from_base64_url_safe(encoded: &str) -> Result<Self, DecodeError> {
@@ -39,7 +37,7 @@ impl ShareLinkToken {
         Self(token)
     }
     pub fn to_base64_url_safe(&self) -> String {
-        URL_SAFE_NO_PAD.encode(&self.0)
+        URL_SAFE_NO_PAD.encode(self.0)
     }
 
     pub fn from_base64_url_safe(encoded: &str) -> Result<Self, DecodeError> {

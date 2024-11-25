@@ -1,8 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use crate::share::share_link_token::{ShareLinkToken, ShareLinkTokenUnion};
 use crate::share::versioning::SharingApiPath;
 
@@ -15,7 +13,7 @@ pub struct TokenPath {
 impl Display for TokenPath {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let encoded_token = self.token.to_base64_url_safe();
-        write!(f, "{}/{}",self.version.to_string(), encoded_token)
+        write!(f, "{}/{}",self.version, encoded_token)
     }
 }
 

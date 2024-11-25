@@ -11,7 +11,6 @@ use std::fmt;
 use std::fmt::Display;
 use std::num::ParseIntError;
 use std::str::FromStr;
-use pkcs8::ObjectIdentifier;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 

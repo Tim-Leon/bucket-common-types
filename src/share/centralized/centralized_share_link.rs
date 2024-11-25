@@ -2,13 +2,10 @@ use crate::share::centralized::centralized_share_link_token::CentralizedShareLin
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
 use crate::share::token_path::TokenPath;
 use crate::share::versioning::SharingApiPath;
-use crate::util::{DOMAIN_NAME, DOMAIN_URL};
-use base64::Engine;
+use crate::util::DOMAIN_NAME;
 use http::uri::Scheme;
 use http::Uri;
 use std::convert::Infallible;
-use std::fmt::Display;
-use std::io::BufRead;
 use std::str::FromStr;
 
 /// Would use the URL create to store the data but the URL crate does not have a Builder Pattern only parser, very sad.
@@ -29,10 +26,7 @@ impl TryFrom<CentralizedShareLinkToken> for CentralizedShareLink {
             token: value.token,
         };
 
-        let subdomain = match value.region {
-            None => { None }
-            Some(region) => { Some( Box::from( region.to_string().as_str())) }
-        };
+        let subdomain = value.region.map(|region| Box::from( region.to_string().as_str()));
 
         let fqdn = FullyQualifiedDomainName {
             subdomain,

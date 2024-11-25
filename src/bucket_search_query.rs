@@ -99,11 +99,8 @@ pub fn parse_search(search: &str) -> Vec<SearchTokensValue> {
             }
             Ok(SearchTokenKey::Tag) => {
                 if let Some(token_val) = lexer.next() {
-                    match token_val {
-                        Ok(SearchTokenKey::Word(word)) => {
-                            token_values.push(SearchTokensValue::Tag(word.to_string()));
-                        }
-                        _ => {}
+                    if let Ok(SearchTokenKey::Word(word)) = token_val {
+                        token_values.push(SearchTokensValue::Tag(word.to_string()));
                     }
                 }
             }
@@ -198,7 +195,7 @@ impl FromStr for BucketSearchQuery {
         let mut query = s.to_string();
         let fragments: Vec<&str> = s.split(';').collect();
 
-        if fragments.len() == 0 {
+        if fragments.is_empty() {
             return Ok(BucketSearchQuery {
                 query: s.to_string(),
                 flags: Vec::new(),

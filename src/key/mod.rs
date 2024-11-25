@@ -1,11 +1,5 @@
-use argon2::password_hash::SaltString;
-use argon2::Argon2;
-use core::slice::SlicePattern;
-use std::hash::Hash;
-use digest::{Digest, FixedOutput};
 use generic_array::typenum::IsGreaterOrEqual;
 use generic_array::{ArrayLength, GenericArray};
-use secrecy::ExposeSecret;
 use std::fmt::Debug;
 use zeroize::Zeroize;
 

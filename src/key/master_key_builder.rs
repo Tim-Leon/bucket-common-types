@@ -1,15 +1,11 @@
-use argon2::password_hash::Salt;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::PasswordHash;
 use generic_array::GenericArray;
-use p256::elliptic_curve::bigint::Encoding;
-use p256::elliptic_curve::{Curve, PrimeField};
+use p256::elliptic_curve::bigint::{Encoding, NonZero};
 use p256::{NistP256, U256};
-use vsss_rs::elliptic_curve::Scalar;
-use vsss_rs::{combine_shares, shamir::split_secret, Gf256};
-use rand::{thread_rng, CryptoRng, RngCore, SeedableRng};
-
+use vsss_rs::{combine_shares, shamir::split_secret};
+use rand::{CryptoRng, RngCore, SeedableRng};
 use crate::key::memory::secure_generic_array::SecreteGenericArray;
-
+use p256::Scalar;
 use super::master_key::MasterKey256;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,7 +47,7 @@ pub struct MasterKeyBuilder {
 
 
 pub struct SecreteShare {
-    pub share: Gf256,
+    pub share: Vec<u8>,
 }
 
 pub struct Secretes {
@@ -63,7 +59,7 @@ pub struct Secretes {
 impl MasterKeyBuilder {
     pub fn new(params: VerifiableSecretSharingSchemeParams) -> Self  {
         if params.validate() {
-            return Self {
+            Self {
                 params,
             }
         } else {
@@ -71,24 +67,29 @@ impl MasterKeyBuilder {
         }
     }
 
-    pub fn combine(&self, secrete_shares: Vec<Gf256>) -> MasterKey256 {
+    pub fn combine(&self, secrete_shares: Vec<SecreteShare>) -> MasterKey256 {
         assert!(
             secrete_shares.len() >= self.params.threshold,
             "Not enough shares to meet the threshold"
         );
 
-
+        // Convert SecreteShare to Vec<Gf256> for reconstruction
+        let shares: Vec<Vec<u8>> = secrete_shares.iter()
+            .map(|s| s.share.clone()) 
+            .collect();
+            
         // Reconstruct the secret
-        let reconstructed_secret = combine_shares(&secrete_shares.as_slice()).expect("Failed to combine shares");
-
+        let reconstructed_secret: p256::Scalar = combine_shares::<Scalar, u8, Vec<u8>>(&shares)
+        .expect("Failed to combine shares");
+        
         // Wrap the reconstructed secret into a `MasterKey256`
         MasterKey256 {
-            key: SecreteGenericArray::new(reconstructed_secret.to_bytes()),
+            key:SecreteGenericArray::new(*GenericArray::from_slice(&reconstructed_secret.to_bytes())),
         }
     }
 
     /// Build and return generated master keys
-    pub fn build<'a>(&self, kdf: PasswordHash<'a>) -> Secretes {
+    pub fn build(&self, kdf: PasswordHash<'_>) -> Secretes {
         let kdf_output = kdf.hash.expect("Password hash is missing");
         assert_eq!(
             kdf_output.len(),
@@ -96,34 +97,47 @@ impl MasterKeyBuilder {
             "Password hash must be 256 bits (32 bytes)"
         );
 
-        // Convert password hash to scalar
-        let modulus = NistP256::ORDER;
-        let mut value = U256::from_be_slice(&kdf_output.as_bytes());
-        value = value % modulus; // Reduce modulo p
-        let secrete_scalar = Scalar::from_repr(value.to_be_bytes().into())
+        // Convert password hash to scalar securely
+        let modulus = <NistP256 as p256::elliptic_curve::Curve>::ORDER;
+        let mut value = U256::from_be_slice(kdf_output.as_bytes());
+        let non_zero_modulus = NonZero::new(modulus).expect("Modulus cannot be zero");
+        value = value.rem(&non_zero_modulus); // Reduce modulo p
+        let secret_scalar = p256::NonZeroScalar::from_repr(value.to_be_bytes().into())
             .expect("Failed to create Scalar from password hash");
-
-
-        // Split the secret into shares
-        let mut deterministic_rng = DeterministicRng::seed_from_u64(102312343859310);
         
-        let shares = split_secret(self.params.threshold.clone(),
-             self.params.limit.clone(),
-              secrete_scalar,
-             deterministic_rng)
-            .expect("Failed to split secret");
+        // Create a deterministic seed from the KDF output
+        let seed = {
+            let mut hasher = blake3::Hasher::new();
+            hasher.update(kdf_output.as_bytes());
+            hasher.update(b"rng_seed"); // Domain separation
+            let hash = hasher.finalize();
+            let mut seed = [0u8; 16];
+            seed.copy_from_slice(&hash.as_bytes()[0..16]);
+            seed
+        };
+        
+        let mut deterministic_rng = DeterministicRng::from_seed(seed);
+        
+        // Split the secret into shares
+        //let scalar_bytes = secret_scalar.to_repr().as_ref().to_vec();
+        let shares = split_secret::<Scalar, u8, Vec<u8>>(
+            self.params.threshold,
+            self.params.limit,
+            *secret_scalar.as_ref(),
+            &mut deterministic_rng
+        ).expect("Failed to split secret");
 
-
-
-        // Wrap shares into `SplitSecret`
-        let split_keys = shares
+        // Wrap shares into SecretShare
+        let secret_shares: Vec<SecreteShare> = shares
             .into_iter()
-            .map(|share| SecreteShare { share: share })
+            .map(|share| SecreteShare { share })
             .collect();
-        let a = generic_array::GenericArray::<u8, generic_array::typenum::U32>::from_slice(kdf_output.as_bytes());
+
         Secretes {
-            master_key: MasterKey256 { key: SecreteGenericArray::new( *a ) },
-            secrete_shares: split_keys,
+            master_key: MasterKey256 { 
+                key: SecreteGenericArray::new(GenericArray::from_slice(kdf_output.as_bytes() ).to_owned() )
+            },
+            secrete_shares: secret_shares,
             threshold: self.params.threshold,
         }
     }

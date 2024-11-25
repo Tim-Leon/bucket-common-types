@@ -1,4 +1,4 @@
-use std::{alloc::{AllocError, Allocator, Global, Layout}, convert::Infallible, default, ops::{Deref, DerefMut}};
+use std::{alloc::{AllocError, Allocator, Global}, u8};
 use generic_array::{ArrayLength, GenericArray};
 use rand::{CryptoRng, RngCore};
 use secrecy::{ExposeSecret, ExposeSecretMut, SecretBox};
@@ -28,19 +28,19 @@ where
 {
     /// Creates a new `SecureGenericArray` with global allocator, no memory specific protection.
     pub fn new(inner: GenericArray<T, TLength>) -> Self {
-        Self::new_in(inner, &Global).unwrap()
+        Self::new_in(inner, Global).unwrap()
     }
 
     /// Creates a new `SecureGenericArray` using a custom allocator.
     pub fn new_in<TAllocator>(
         inner: GenericArray<T, TLength>,
-        allocator:&TAllocator,
+        allocator:TAllocator,
     ) -> Result<Self, SecreteGenericArrayError>
     where
         TAllocator: Allocator + ?CryptoSecureAllocator, // Might be crpyot secure allocator, pls mark it if it's required but also need support for global allocator.
     {
-        // Wrap the allocated memory in a `SecretBox`.
-        let boxed = unsafe { Box::<T, &TAllocator>::from_raw_in( inner.as_mut_ptr(), allocator) };
+    // Wrap the allocated memory in a `SecretBox`.
+        let boxed = Box::new_in(inner, Global);   // TODO: Add support for the actual allocator, currently secrecy only support global allocator. Switch this out for TAllocator.
         Ok(Self(SecretBox::new(boxed)))
     }
 
@@ -52,14 +52,21 @@ where
     ) -> Result<Self, SecreteGenericArrayError>
     where
         TCryptoRng: RngCore + CryptoRng,
+        TAllocator: Allocator,
+        T: From<u8>, // Add this bound to allow conversion from u8 to T
         T: Default,
-        TAllocator: Allocator
     {
-        let mut slice = GenericArray::<u8, TLength>::default(); 
-        rng.fill_bytes(&mut slice);
-        Ok(
-            Self::new_in(slice, allocator)?
-        )
+        let mut array = GenericArray::<T, TLength>::default();
+        // Create a temporary buffer for random bytes
+        let mut bytes = vec![0u8; array.len()];
+        rng.fill_bytes(&mut bytes);
+        
+        // Convert each byte to type T
+        for (i, byte) in bytes.iter().enumerate() {
+            array[i] = T::from(*byte);
+        }
+        
+        Self::new_in(array, allocator)
     }
 }
 

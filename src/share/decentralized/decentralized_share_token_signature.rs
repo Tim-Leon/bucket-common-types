@@ -1,5 +1,4 @@
 use core::slice::SlicePattern;
-use std::convert::Infallible;
 
 use ed25519_compact::{Noise, PublicKey, SecretKey, Signature};
 
@@ -31,9 +30,7 @@ impl DecentralizedShareTokenSignature {
         let siganture = secret_key.sign(token.as_slice(), Some(noise));
         
         Ok(
-            Self {
-                0: siganture
-            }
+            Self(siganture)
         )
     }
 
@@ -48,6 +45,6 @@ impl DecentralizedShareTokenSignature {
         public_key: &PublicKey,
         token: &ShareLinkToken,
     ) -> Result<(), ed25519_compact::Error> {
-        public_key.verify(&token.0, &self.0)
+        public_key.verify(token.0, &self.0)
     }
 }
