@@ -44,13 +44,13 @@ convert_case = "0.6.0"
 prost-types = "0.13.1"
 logos = "0.14.0"
 pbkdf2 = "0.12.2"
-generic-array = { version = "1.1.0", optional  = true, features = ["zeroize"] }
+generic-array = { version = "1.1.1", optional  = true, features = ["zeroize"] }
 argon2 = {version =  "*", optional = true }
 zeroize = {version =  "1.8.1", features = ["derive", "simd"] }
 secrecy = { version = "0.10.3", optional = true }
 vsss-rs = {version =  "4.3.8", optioanl = true }
 pkcs8 = { version = "0.10.2" , opotional = true}
-chacha20poly1305 = "0.11.0-pre.2"
+chacha20poly1305 = "0.10.1"
 mime = "0.3.17"
 http = "1.1.0"
 tonic = "0.12.3"
@@ -61,7 +61,12 @@ rust-i18n = "3.1.2"
 oid-registry = "0.7.1"
 # Generate documentation for parsers.
 railroad = { version = "0.3.2" , features = ["resvg"]}
+
+rand_xorshift = "0.3.0"
+
 urlencoding = { version = "2.1.3" , features = []}
+# Used in shamir secrete sharing
+p256 = "0.13.2" 
 [dev-dependencies]
 serial_test = "3.0.0"
 criterion = { version = "0.5.1" } # Benchmark framework that is used to deterimne performance change, as in regresion or improvement.

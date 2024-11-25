@@ -41,8 +41,8 @@ The payment plans available will be
 
 Pricing
 - Metered. (Pay per usage)
-- Subscription.
-- One Time Payment.
+- Subscription. (Cycle payment) 
+- One Time Payment. (Single payment)
 
 When ever a user uses a subscription or onetime-payment, then user balance is used.
 When a user runs out of balance, they can no longer use services that cost.

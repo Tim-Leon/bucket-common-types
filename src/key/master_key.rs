@@ -11,83 +11,36 @@ use std::convert::Infallible;
 use digest::typenum;
 use pkcs8::{ObjectIdentifier, PrivateKeyInfo};
 use pkcs8::spki::AlgorithmIdentifier;
-use crate::key::{CryptoMasterKey};
+use super::memory::secure_generic_array::SecreteGenericArray;
 
 pub struct MasterKey256 {
-    pub secrete: SecureGenericArray<u8, typenum::U32>,
+    pub key: SecreteGenericArray<u8, typenum::U32>,
 }
 
-impl SlicePattern for MasterKey256 {
-    type Item = u8;
 
-    fn as_slice(&self) -> &[Self::Item] {
-        self.secrete.0.expose_secret().as_slice()
-    }
-}
+impl MasterKey256 {
 
-impl CryptoMasterKey for MasterKey256 {
-    type KeyLength = typenum::U32;
-    type CryptoHasher = Sha3_256;
-
-    fn generate<TCryptoRng: rand::CryptoRng + rand::RngCore>(csprng: &mut TCryptoRng) -> Result<Self, Self::Error>
-    where
-        Self: Sized
-    {
-        let mut secrete: [u8; 32] = [0; 32];
-        csprng.fill_bytes(&mut secrete);
-        Ok(Self {
-            secrete: SecureGenericArray {
-                0: GenericArray::from_slice(secrete.as_slice()).try_into()?,
-            },
-        })
-    }
-
-    fn new(argon2: &Argon2, password: impl AsRef<[u8]>, salt: SaltString) -> Result<Self, Self::Error>
+    fn new(argon2: &Argon2, password: impl AsRef<[u8]>, salt: SaltString) -> Result<Self, Infallible>
     where
         Self: Sized
     {
         let mut hasher = Self::CryptoHasher::new();
         hasher.update(salt);
         let mac = hasher.finalize();
-        let master_key = argon2
+        let password_hash = argon2
             .hash_password(password.as_ref(),  mac.as_slice())?;
+        debug_assert_eq!(password_hash.hash.unwrap().as_bytes().len(), 32);
+        let key = SecreteGenericArray::new(password_hash.hash.unwrap().as_bytes()); 
         Ok(MasterKey256 {
-            secrete: SecureGenericArray::from(GenericArray::from_slice(
-                master_key.hash.unwrap().as_bytes(),
-            ).try_into()?),
+            key,
         })
     }
 }
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum MasterKey256ParseError {
 
 }
-
-
-impl TryFrom<&PasswordHash<'_>> for MasterKey256 {
-    type Error = Infallible;
-
-    fn try_from(value: &PasswordHash) -> Result<Self, Self::Error> {
-        let output = match value.hash {
-            None => { return Err(()); }
-            Some(x) => { x }
-        };
-        Ok(Self {
-            secrete: SecureGenericArray::from(GenericArray::from_slice(output.as_bytes()).try_into()?),
-        })
-    }
-}
-impl<T, TArrayLength: generic_array::ArrayLength> From<SecureGenericArray<T, TArrayLength>> for MasterKey256 {
-    fn from(value: SecureGenericArray<T, TArrayLength>) -> Self {
-        Self {
-            secrete: value,
-        }
-    }
-}
-
-
 
 impl TryInto<pkcs8::PrivateKeyInfo<'_>> for MasterKey256 {
     type Error = Infallible;
@@ -109,22 +62,5 @@ impl MasterKey256 {
         Some(
             ObjectIdentifier::new("1.3.6.1.4.1.99999.1.1").unwrap()
         )
-    }
-}
-
-
-#[cfg(test)]
-mod tests {
-    use crate::module::encryption::key::master_key::MasterKey256;
-    use argon2::password_hash::SaltString;
-    use argon2::Argon2;
-
-    fn create_master_key_tests() {
-        let argon2 = Argon2::default();
-        let nonce = "";
-        let password = "";
-        let salt = SaltString::from("asd".to_string());
-        let master_key_from_plaintext = MasterKey256::new(&argon2, nonce, password, salt ).unwrap();
-        let master_key_from_phc = MasterKey256::from_phc_string();
     }
 }

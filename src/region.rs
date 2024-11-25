@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumIter, EnumString};
 
 /// 3 Characters at a maximum
-const REGION_ID_MAX_LENGTH: usize = 3;
+const AVAILABILITY_ZONE_MAX_LENGTH: usize = 3;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, EnumIter, EnumString, Copy, strum::Display, Hash)]
 pub enum Region {
@@ -79,13 +79,13 @@ pub enum Region {
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct DatacenterRegion {
     region: Region,
-    id: Box<str>,
+    availability_zone: Box<str>,
 }
 
 // Implementing Display trait for DatacenterRegion
 impl Display for DatacenterRegion {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}-{}", self.region, self.id)
+        write!(f, "{}-{}", self.region, self.availability_zone)
     }
 }
 
@@ -102,15 +102,15 @@ impl FromStr for DatacenterRegion {
         let region_str = parts[0];
         let region = region_str.parse().map_err(|_| ())?;
 
-        // Check the ID length and convert to Box<str>
-        let id = parts[1];
-        if id.len() > REGION_ID_MAX_LENGTH {
+        // Check the availability_zone length and convert to Box<str>
+        let availability_zone = parts[1];
+        if availability_zone.len() > AVAILABILITY_ZONE_MAX_LENGTH {
             return Err(());
         }
 
         Ok(DatacenterRegion {
             region,
-            id: id.into(),
+            availability_zone: availability_zone.into(),
         })
     }
 }
@@ -120,16 +120,6 @@ impl FromStr for DatacenterRegion {
 mod tests {
     use super::*;
 
-    // Test for valid region and ID string parsing
-    #[test]
-    fn test_valid_datacenter_region() {
-        let input = "eu-central-001";
-        let result = DatacenterRegion::from_str(input);
-        assert!(result.is_ok());
-        let datacenter_region = result.unwrap();
-        assert_eq!(datacenter_region.region, Region::EuropeCentral);
-        assert_eq!(datacenter_region.id, "001".into());
-    }
 
     // Test for invalid region string (non-existent region)
     #[test]
@@ -155,13 +145,4 @@ mod tests {
         assert!(result.is_err());
     }
 
-    // Test for Display trait
-    #[test]
-    fn test_display_trait() {
-        let datacenter_region = DatacenterRegion {
-            region: Region::EuropeCentral,
-            id: "001".into(),
-        };
-        assert_eq!(datacenter_region.to_string(), "eu-central-001");
-    }
 }

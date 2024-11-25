@@ -1,7 +1,8 @@
-use digest::{generic_array, typenum};
-use digest::generic_array::{ArrayLength, GenericArray};
-use generic_array::typenum::IsGreaterOrEqual;
+use generic_array::{typenum::IsGreaterOrEqual, ArrayLength, GenericArray};
+use vsss_rs::elliptic_curve::bigint;
 use zeroize::Zeroize;
+
+use crate::bucket::bucket_guid::BucketGuid;
 
 use super::{DeterministicNonceGenerator, Nonce, NonceGenerator};
 
@@ -16,47 +17,44 @@ TCryptoRng: rand::RngCore
     pub csprng: TCryptoRng,
 }
 
-impl<TCryptoRng, TNonceLength> NonceGenerator<TCryptoRng, TNonceLength> for RandomSequential92BitNonceGenerator<TCryptoRng>
-where TCryptoRng: rand::CryptoRng,
-TCryptoRng: rand::RngCore, TNonceLength: generic_array::ArrayLength<T> + IsGreaterOrEqual<generic_array::typenum::U8>
+impl<TCryptoRng, TNonceLength> NonceGenerator<TNonceLength> for RandomSequential92BitNonceGenerator<TCryptoRng> where 
+TCryptoRng: rand::CryptoRng, 
+TCryptoRng: rand::RngCore,
+TNonceLength: ArrayLength,
+TNonceLength: IsGreaterOrEqual<generic_array::typenum::U8>
 {
-    //TODO: Seed
-    fn new<T>(csprng: TCryptoRng, seed:T) -> Self {
-        Self {
-            counter: 0,
-            csprng,
-        }
-    }
-
     fn next(&mut self) -> Nonce<TNonceLength> {
-        use rand::CryptoRng;
-        use rand::RngCore;
         let mut nonce = GenericArray::default();
         // Fill fist 4 bytes with the counter
         nonce[0..4].copy_from_slice(&self.counter.to_be_bytes());
         // Fill the last 8 bytes with the random u64
         nonce[4..12].copy_from_slice(&self.csprng.next_u64().to_be_bytes());
         self.counter += 1;
-        nonce.try_into().unwrap()
+        Nonce (nonce)
     }
 }
 
-pub struct DeterministicSequential64BitNonceGenerator<TCryptoRng> where
-TCryptoRng: rand::CryptoRng,
-TCryptoRng: rand::RngCore{
-    pub counter: u64
+
+
+pub struct DeterministicHashSequentialNonceGenerator {
+    pub seed: u128,
 }
 
-impl< TNonceLength> DeterministicNonceGenerator<TNonceLength> for DeterministicSequential64BitNonceGenerator<TNonceLength>
-    where
-TNonceLength: generic_array::ArrayLength<T> + IsGreaterOrEqual<typenum::U8>
-{
-    fn new<TLength: ArrayLength<T>>(seed: GenericArray<u8, TLength>) -> Self {
+impl DeterministicHashSequentialNonceGenerator {
+    pub fn new(val: &BucketGuid) -> Self {
+        
         Self {
-            counter: seed.try_into().unwrap()
+            seed: todo!(),
         }
     }
-    fn next(&mut self) -> Nonce<TNonceLength> {
-
-    }
 }
+
+impl<TNonceLength> NonceGenerator<TNonceLength> for DeterministicHashSequentialNonceGenerator 
+where 
+TNonceLength: ArrayLength,
+TNonceLength: IsGreaterOrEqual<generic_array::typenum::U8> {
+    
+    fn next(&mut self) -> Nonce<TNonceLength> {
+        
+    }
+} 

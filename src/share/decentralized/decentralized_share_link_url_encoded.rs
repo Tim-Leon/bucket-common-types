@@ -3,12 +3,13 @@ use std::fmt::{Display, Formatter};
 use aes_gcm;
 use base64::{Engine, engine::general_purpose};
 use http::uri::Scheme;
+use secrecy::ExposeSecret;
 use time::OffsetDateTime;
 use crate::bucket::bucket_feature_flags::{self, BucketFeaturesFlags};
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
 use crate::bucket::encryption::BucketEncryptionScheme;
-use crate::key::derived_key::CryptoHashDerivedKeySha3_256;
+use crate::key::derived_key::DerivedKey;
 use crate::region::DatacenterRegion;
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;
 use crate::share::versioning::SharingApiPath;
@@ -24,7 +25,6 @@ use super::decentralized_share_token_signature::{DecentralizedShareTokenSignatur
 // The Only difference between ShareLink and SecretShareLink is
 // that SecretShareLink encode the key for decrypting the bucket in an url such as Aes256Gcm.
 // And that SecretShareLink use
-#[derive(Debug,  Clone)]
 pub struct DecentralizedSecretShareLink {
     pub scheme: Scheme,
     pub region_cluster: Option<DatacenterRegion>,
@@ -34,7 +34,6 @@ pub struct DecentralizedSecretShareLink {
     pub token: DecentralizedSecretShareToken,
 }
 
-#[derive(Clone, Debug)]
 pub struct DecentralizedSecretesPath {
         // Depending on what encryption used, the bucket_key might be different.
     // Note that the encryption algorithm chosen should have built in integrity check such as AES256-GCM to be considered fully secure or need an external source of integrity check.
@@ -50,7 +49,7 @@ pub struct DecentralizedSecretesPath {
     // that has the implementation necessary.
     pub bucket_encryption: BucketEncryptionScheme,
     // Currently we limit the key size to at most 4096-bit encryption keys.
-    pub secrete_key: Option<CryptoHashDerivedKeySha3_256>,
+    pub secrete_key: Option<DerivedKey>,
     /// The permission associated with the url.
     pub permission: BucketPermissionFlags,
     /// For how long the signature is going to be valid
@@ -62,14 +61,24 @@ pub struct DecentralizedSecretesPath {
 
 impl Display for DecentralizedSecretesPath {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}/{}#{}#{}#{}", 
+
+        write!(f, "{}{}/{}#{}#{}", 
         self.version,
-         self.bucket_guid, 
-         general_purpose::URL_SAFE_NO_PAD.encode(&self.expires.to_string()), 
-         general_purpose::URL_SAFE_NO_PAD.encode(&self.permission.bits().to_be_bytes()), 
-         general_purpose::URL_SAFE_NO_PAD.encode(&self.secrete_key),
-         general_purpose::URL_SAFE_NO_PAD.encode(&self.token_signature.0)
-        )
+        self.bucket_guid, 
+        general_purpose::URL_SAFE_NO_PAD.encode(&self.expires.to_string()), 
+        general_purpose::URL_SAFE_NO_PAD.encode(&self.permission.bits().to_be_bytes()), 
+        general_purpose::URL_SAFE_NO_PAD.encode(&self.token_signature.0)
+        )?;
+
+        match &self.secrete_key {
+            Some(secrete_key) => {
+                write!(f, "#{}", 
+                general_purpose::URL_SAFE_NO_PAD.encode(secrete_key.key.expose_secret())
+             )?
+            },
+            None => {},
+        }
+        Ok(())
     }
 }
 
