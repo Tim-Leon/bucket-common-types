@@ -26,9 +26,61 @@ pub struct BucketCommonPrefixedPath {
     paths: Vec<BucketRelativePath>,
 }
 
-/// Must contain a file
+/// Must contain a file.
+/// More restrictive than ``BucketRelativePath`` which only restrict the path to start with a forward slash.
+#[derive(Debug, Eq, PartialEq)]
 struct BucketRelativeAbsolutePath {
-    
+    pub path: String,
+}
+
+#[derive(thiserror::Error, Debug, PartialEq)]
+pub enum BucketRelativeAbsolutePathError {
+    #[error("PathMustStartWithForwardSlash")]
+    PathMustStartWithForwardSlash,
+    #[error("Path contains invalid character at position {position}: '{invalid_char}'")]
+    PathContainsInvalidCharacter { position: usize, invalid_char: char },
+    #[error("Path mustn't be longer than {0}", BUCKET_RELATIVE_PATH_MAX_LENGTH)]
+    RelativePathTooLong,
+    #[error("Path does not contain file.something")]
+    PathNotAbsolute,
+}
+
+impl FromStr for BucketRelativeAbsolutePath {
+    type Err = BucketRelativeAbsolutePathError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Check if the path starts with a forward slash '/'
+        if !s.starts_with('/') {
+            return Err(BucketRelativeAbsolutePathError::PathMustStartWithForwardSlash);
+        };
+        // check path max length
+        if s.len() > BUCKET_RELATIVE_PATH_MAX_LENGTH {
+            return Err(BucketRelativeAbsolutePathError::RelativePathTooLong);
+        }
+        // Get the last segment
+        let file_name = match s.rsplit_once('/') {
+            Some((_, name)) if !name.is_empty() => name,
+            _ => return Err(BucketRelativeAbsolutePathError::PathNotAbsolute),
+        };
+
+        // Check if there's a valid extension
+        if !file_name.contains('.') || file_name.ends_with('.') {
+            return Err(BucketRelativeAbsolutePathError::PathNotAbsolute);
+        }
+        // Check for invalid characters
+        for (index, c) in s.chars().enumerate() {
+            if !(c.is_alphanumeric() || c == '/' || c.is_numeric() || c == '-' || c == '_' || c == '.') {
+                return Err(BucketRelativeAbsolutePathError::PathContainsInvalidCharacter {
+                    position: index,
+                    invalid_char: c,
+                });
+            }
+        }
+
+        Ok(Self {
+            path: s.to_string(),
+        })
+    }
 }
 
 /// The relative path from the bucket guid,
@@ -66,7 +118,6 @@ impl FromStr for BucketRelativePath {
         if s.len() > BUCKET_RELATIVE_PATH_MAX_LENGTH {
             return Err(BucketRelativePathParserError::RelativePathTooLong);
         }
-        let segments : u32 = 0;
         // Check for invalid characters
         for (index, c) in s.chars().enumerate() {
             if !(c.is_alphanumeric() || c == '/' || c.is_numeric() || c == '-' || c == '_') {
@@ -83,118 +134,104 @@ impl FromStr for BucketRelativePath {
     }
 }
 
+
+// ... existing code ...
+
 #[cfg(test)]
 mod tests {
+
+    use uuid::Uuid;
+
     use super::*;
-    use std::str::FromStr;
 
     #[test]
-    fn test_valid_paths() {
-        // Test a basic valid path
-        let path = BucketRelativePath::from_str("/valid_path");
-        assert_eq!(path, Ok(BucketRelativePath { path: "/valid_path".to_string() }));
+    fn test_bucket_relative_path_valid() {
+        let valid_paths = vec![
+            "/simple",
+            "/path/to/something",
+            "/with-dash",
+            "/with_underscore",
+            "/with123numbers",
+        ];
 
-        // Test a path with numbers and allowed characters
-        let path = BucketRelativePath::from_str("/path123_with-allowed_chars");
-        assert_eq!(path, Ok(BucketRelativePath { path: "/path123_with-allowed_chars".to_string() }));
-
-        // Test a simple path with only a forward slash
-        let path = BucketRelativePath::from_str("/");
-        assert_eq!(path, Ok(BucketRelativePath { path: "/".to_string() }));
+        for path in valid_paths {
+            assert!(BucketRelativePath::from_str(path).is_ok());
+        }
     }
 
     #[test]
-    fn test_path_without_leading_slash() {
-        // Path without leading slash should return an error
-        let path = BucketRelativePath::from_str("no_slash");
-        assert_eq!(path, Err(BucketRelativePathParserError::PathMustStartWithForwardSlash));
+    fn test_bucket_relative_path_invalid() {
+        let test_cases = vec![
+            ("no_leading_slash", BucketRelativePathParserError::PathMustStartWithForwardSlash),
+            ("/@invalid", BucketRelativePathParserError::PathContainsInvalidCharacter { position: 1, invalid_char: '@' }),
+            ("/path/with space", BucketRelativePathParserError::PathContainsInvalidCharacter { position: 9, invalid_char: ' ' }),
+        ];
+
+        for (path, expected_err) in test_cases {
+            let result = BucketRelativePath::from_str(path);
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), expected_err);
+        }
     }
 
     #[test]
-    fn test_path_with_invalid_characters() {
-        // Path with invalid characters should return an error
-        let path = BucketRelativePath::from_str("/invalid!@#$%");
-        assert_eq!(
-            path,
-            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
-                position: 8,
-                invalid_char: '!'
-            })
-        );
+    fn test_bucket_relative_absolute_path_valid() {
+        let valid_paths = vec![
+            "/file.txt",
+            "/path/to/file.ext",
+            "/document-123_test.pdf",
+        ];
 
-        // Path containing spaces
-        let path = BucketRelativePath::from_str("/invalid path");
-        assert_eq!(
-            path,
-            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
-                position: 8,
-                invalid_char: ' '
-            })
-        );
-
-        // Path with a backslash
-        let path = BucketRelativePath::from_str("/invalid\\path");
-        assert_eq!(
-            path,
-            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
-                position: 8,
-                invalid_char: '\\'
-            })
-        );
-
-        // Path with restricted patterns like ".." or "."
-        let path = BucketRelativePath::from_str("/invalid/..");
-        assert_eq!(
-            path,
-            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
-                position: 9,
-                invalid_char: '.'
-            })
-        );
-
-        let path = BucketRelativePath::from_str("/invalid/.");
-        assert_eq!(
-            path,
-            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
-                position: 9,
-                invalid_char: '.'
-            })
-        );
-
-        // Path with colon
-        let path = BucketRelativePath::from_str("/invalid:path");
-        assert_eq!(
-            path,
-            Err(BucketRelativePathParserError::PathContainsInvalidCharacter {
-                position: 8,
-                invalid_char: ':'
-            })
-        );
+        for path in valid_paths {
+            assert!(BucketRelativeAbsolutePath::from_str(path).is_ok());
+        }
     }
 
     #[test]
-    fn test_path_with_valid_special_characters() {
-        // Test that dashes and underscores are allowed in paths
-        let path = BucketRelativePath::from_str("/valid_path-123_ok");
-        assert_eq!(path, Ok(BucketRelativePath { path: "/valid_path-123_ok".to_string() }));
+    fn test_bucket_relative_absolute_path_invalid() {
+        let test_cases = vec![
+            ("no_leading_slash.txt", BucketRelativeAbsolutePathError::PathMustStartWithForwardSlash),
+            ("/no_extension", BucketRelativeAbsolutePathError::PathNotAbsolute),
+            ("/invalid.", BucketRelativeAbsolutePathError::PathNotAbsolute),
+            ("/@invalid.txt", BucketRelativeAbsolutePathError::PathMustStartWithForwardSlash),
+            ("/path/with space.txt", BucketRelativeAbsolutePathError::PathContainsInvalidCharacter { position: 9, invalid_char: ' ' }),
+        ];
 
-        // Test that numbers, dashes, and underscores work together
-        let path = BucketRelativePath::from_str("/path123_with-numbers_and_letters");
-        assert_eq!(path, Ok(BucketRelativePath { path: "/path123_with-numbers_and_letters".to_string() }));
+        for (path, expected_err) in test_cases {
+            let result = BucketRelativeAbsolutePath::from_str(path);
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), expected_err);
+        }
     }
 
     #[test]
-    fn test_path_too_long() {
-        // Generate a path exceeding the max length
+    fn test_path_length_limits() {
+        // Create a path that exceeds the maximum length
         let long_path = format!("/{}", "a".repeat(BUCKET_RELATIVE_PATH_MAX_LENGTH));
-        let too_long_path = format!("/{}", "a".repeat(BUCKET_RELATIVE_PATH_MAX_LENGTH + 1));
+        
+        assert!(matches!(
+            BucketRelativePath::from_str(&long_path),
+            Err(BucketRelativePathParserError::RelativePathTooLong)
+        ));
 
-        // Valid path within max length
-        let path = BucketRelativePath::from_str(&long_path);
-        assert_eq!(path, Ok(BucketRelativePath { path: long_path }));
-
-        // Path exceeding max length should return an error
-        let path = BucketRelativePath::from_str(&too_long_path);
-        assert_eq!(path, Err(BucketRelativePathParserError::RelativePathTooLong));
+        assert!(matches!(
+            BucketRelativeAbsolutePath::from_str(&format!("{}.txt", long_path)),
+            Err(BucketRelativeAbsolutePathError::RelativePathTooLong)
+        ));
     }
+
+    #[test]
+    fn test_bucket_absolute_path_creation() {
+        let guid = BucketGuid {
+            user_id: Uuid::new_v4(),
+            bucket_id: Uuid::new_v4(),
+        };
+        let relative_path = BucketRelativePath::from_str("/test/path").unwrap();
+        
+        let absolute_path = BucketAbsolutePath::new(guid.clone(), relative_path);
+        
+        assert_eq!(absolute_path.bucket_guid, guid);
+        assert_eq!(absolute_path.relative_path.path, "/test/path");
+    }
+    
 }

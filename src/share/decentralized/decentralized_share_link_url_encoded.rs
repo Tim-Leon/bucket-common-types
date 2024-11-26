@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use crate::bucket::bucket_feature_flags::{BucketFeaturesFlags};
 use crate::bucket::bucket_guid::BucketGuid;
 use crate::bucket::bucket_permission::BucketPermissionFlags;
-use crate::bucket::encryption::BucketEncryptionScheme;
+use crate::bucket::encryption_scheme::BucketEncryptionScheme;
 use crate::key::derived_key::DerivedKey;
 use crate::region::DatacenterRegion;
 use crate::share::fully_qualified_domain_name::FullyQualifiedDomainName;

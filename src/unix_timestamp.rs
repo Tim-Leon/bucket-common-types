@@ -6,30 +6,37 @@ use time::{error::ComponentRange, OffsetDateTime};
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
 pub struct UnixTimestamp(pub OffsetDateTime);
 
+impl UnixTimestamp {
+    pub fn now_utc() -> Self {
+        UnixTimestamp {
+            0: OffsetDateTime::now_utc()
+        }
+    }
+}
+
 impl Default for UnixTimestamp {
     fn default() -> Self {
         UnixTimestamp(OffsetDateTime::UNIX_EPOCH)
     }
 }
 
-//TODO: Error? Will it work? Do we need to account for nanoseconds?
 impl TryFrom<prost_types::Timestamp> for UnixTimestamp {
     type Error = ComponentRange;
 
     fn try_from(value: Timestamp) -> Result<Self, Self::Error> {
         //sqlx::types::time::OffsetDateTime::
-        let result = OffsetDateTime::from_unix_timestamp(value.seconds)?;
+        let result = OffsetDateTime::from_unix_timestamp(value.seconds)?.replace_nanosecond(value.nanos as u32)?;
         Ok(UnixTimestamp(result))
     }
 }
-// TODO: Switch to FROM instead? Infallible try_from()...
 impl TryInto<prost_types::Timestamp> for UnixTimestamp {
     type Error = TimestampError;
 
     fn try_into(self) -> Result<prost_types::Timestamp, Self::Error> {
-        let temp = SystemTime::from(self.0);
-        let result: Timestamp = Timestamp::from(temp);
-        Ok(result)
+        Ok(Timestamp {
+            seconds: self.0.unix_timestamp(),
+            nanos: self.0.nanosecond() as i32,
+        })
     }
 }
 
@@ -37,11 +44,7 @@ impl TryInto<prost_types::Timestamp> for UnixTimestamp {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_timestmap_conversion() {
-        let _stamp = UnixTimestamp::default();
-        todo!()
-    }
+
 
     #[test]
     fn test_default_unix_timestamp() {
@@ -69,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_from_into_conversions() {
-        let time: UnixTimestamp = UnixTimestamp::default();
+        let time: UnixTimestamp = UnixTimestamp::now_utc();
         let prost: Timestamp = time.try_into().unwrap();
         let time2 = UnixTimestamp::try_from(prost).unwrap();
         assert_eq!(time, time2)

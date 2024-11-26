@@ -8,6 +8,7 @@ pub mod master_key;
 pub mod nonce_generator;
 pub mod master_key_builder;
 pub mod memory;
+pub mod kdf;
 
 pub struct Nonce<TNonceLength: ArrayLength>(GenericArray<u8, TNonceLength>);
 

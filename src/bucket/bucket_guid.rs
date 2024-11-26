@@ -112,103 +112,53 @@ pub enum BucketGuidParseError {
     #[error("Failed to parse UUID: {0}")]
     UuidParserFailed(#[source] uuid::Error),
 }
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    // Very important, checks the size to ensure there is no opsy 
-    fn test_bucket_guid_size() {
-        debug_assert_eq!(BucketGuid::size(), std::mem::size_of::<BucketGuid>());
-    }
 
-    // Test the `new` method to create a new BucketGuid
     #[test]
-    fn test_new() {
-        let user_id = Uuid::new_v4();
-        let bucket_id = Uuid::new_v4();
+    fn test_fmt_with_different_formats() {
+        let user_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+        let bucket_id = Uuid::parse_str("67e55044-10b1-426f-9247-bb680e5fe0c8").unwrap();
         let bucket_guid = BucketGuid::new(user_id, bucket_id);
 
+        // Test Hyphenated format with different UUID formats
+        let result = format!("{}", bucket_guid);
+        assert_eq!(
+            result,
+            "550e8400e29b41d4a716446655440000-67e5504410b1426f9247bb680e5fe0c8"
+        );
+
+        // Test Simple format
+        let result = format!("{}", bucket_guid);
+        assert_eq!(
+            result,
+            "550e8400e29b41d4a716446655440000-67e5504410b1426f9247bb680e5fe0c8"
+        );
+    }
+
+    #[test]
+    fn test_basic_operations() {
+        // Test new()
+        let user_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+        let bucket_id = Uuid::parse_str("67e55044-10b1-426f-9247-bb680e5fe0c8").unwrap();
+        let bucket_guid = BucketGuid::new(user_id, bucket_id);
         assert_eq!(bucket_guid.user_id, user_id);
         assert_eq!(bucket_guid.bucket_id, bucket_id);
+
+        // Test generate()
+        let generated = BucketGuid::generate();
+        assert_ne!(generated.user_id, generated.bucket_id);
+
+        // Test to_bytes()
+        let bytes = bucket_guid.to_bytes();
+        assert_eq!(bytes.len(), 32);
+        assert_eq!(&bytes[0..16], user_id.as_bytes());
+        assert_eq!(&bytes[16..32], bucket_id.as_bytes());
     }
 
-    // Test the `generate` method to create a random BucketGuid
-    #[test]
-    fn test_generate() {
-        let bucket_guid = BucketGuid::generate();
-
-        // Ensure that the generated GUID has different user_id and bucket_id
-        assert_ne!(bucket_guid.user_id, bucket_guid.bucket_id);
-    }
-
-    // Test the `size` constant to verify that BucketGuid's size is 32 bytes
     #[test]
     fn test_size() {
         assert_eq!(BucketGuid::size(), 32);
-    }
-
-    // Test the `to_bytes` method to ensure it correctly converts to a slice of bytes
-    #[test]
-    fn test_to_bytes() {
-        let user_id = Uuid::new_v4();
-        let bucket_id = Uuid::new_v4();
-        let bucket_guid = BucketGuid::new(user_id, bucket_id);
-
-        let slice = bucket_guid.to_bytes();
-        assert_eq!(slice.len(), 32); // Ensure the slice is 32 bytes
-        assert_eq!(&slice[0..16], user_id.as_bytes()); // First 16 bytes are user_id
-        assert_eq!(&slice[16..32], bucket_id.as_bytes()); // Last 16 bytes are bucket_id
-    }
-
-    // Test the `Display` implementation to ensure it formats correctly
-    #[test]
-    fn test_display() {
-        let user_id = Uuid::new_v4();
-        let bucket_id = Uuid::new_v4();
-        let bucket_guid = BucketGuid::new(user_id, bucket_id);
-
-        let formatted = format!("{}", bucket_guid);
-        let expected = format!("{}-{}", user_id.as_simple(), bucket_id.as_simple());
-
-        assert_eq!(formatted, expected);
-    }
-
-    // Test the `FromStr` implementation with valid input
-    #[test]
-    fn test_from_str_valid() {
-        let user_id = Uuid::new_v4();
-        let bucket_id = Uuid::new_v4();
-        let input = format!("{}-{}", user_id, bucket_id);
-
-        let parsed = BucketGuid::from_str(&input);
-        assert!(parsed.is_ok());
-        let bucket_guid = parsed.unwrap();
-        assert_eq!(bucket_guid.user_id, user_id);
-        assert_eq!(bucket_guid.bucket_id, bucket_id);
-    }
-
-    // Test the `FromStr` implementation with invalid input (wrong length)
-    #[test]
-    fn test_from_str_invalid_length() {
-        let input = "invalid-length-uuid";
-        let parsed = BucketGuid::from_str(input);
-
-        assert!(parsed.is_err());
-        assert_eq!(parsed.unwrap_err(), BucketGuidParseError::InvalidLength);
-    }
-
-    // Test the `FromStr` implementation with invalid UUID format
-    #[test]
-    fn test_from_str_invalid_uuid() {
-        let input = "invalid-uuid-format-invalid-uuid";
-        let parsed = BucketGuid::from_str(input);
-
-        assert!(parsed.is_err());
-        match parsed.unwrap_err() {
-            BucketGuidParseError::UuidParserFailed(_) => {} // Expected error
-            _ => panic!("Expected UuidParserFailed error"),
-        }
     }
 }

@@ -8,5 +8,6 @@ pub mod bucket_compression;
 pub mod storage_operation_behavior_flags;
 pub mod bucket_limits;
 pub mod conditional_requests;
-pub mod encryption;
 pub mod archive;
+pub mod encryption_algorithm;
+pub mod encryption_scheme;
